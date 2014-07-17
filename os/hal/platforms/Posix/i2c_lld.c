@@ -46,53 +46,58 @@ I2CDriver I2CD1;
 /*===========================================================================*/
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
- buffer_stream *bs_1;
+ buffer_stream bs_1;
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 
 //simulate dmaStreamAllocate using malloc the buffer  once called
-static bool allocate_stream(buffer_stream  *bs)
+static bool allocate_stream(buffer_stream  bs)
 {
 
-    
-     bs = malloc(sizeof(*bs_1));
-    if(bs == NULL || bs->isMalloc == true)
+   /* if(bs == NULL)
     {
         return true;
     }
     else
     {
-       bs->isMalloc = true;
+       bs.isMalloc = true;
        return false;
 
     }    
-
-
+*/
+    bs.isMalloc= true;
+    return false;
 }
 //frees the buffer
-static void release_stream(buffer_stream *bs)
+static void release_stream(buffer_stream bs)
 {
-    free((void*)bs->rxbuffer); 
-    free((void*)bs->txbuffer); 
-    bs->isMalloc = false;
-    free(bs);
+    free((void*)bs.rxbuffer); 
+    free((void*)bs.txbuffer); 
+    bs.isMalloc = false;
 
 }
 static void recieve_stream(uint8_t * rxbuf, size_t rxbyte)
 {
-   bs_1->rxbuffer = (uint8_t *)malloc(rxbyte+1);
-   //char rxbuffer[rxbyte +1];
-   fgets((char*)bs_1->rxbuffer, rxbyte,stdin);
-   strcpy((char*)rxbuf, (char*)bs_1->rxbuffer);
+
+   bs_1.rxbuffer = (uint8_t *)malloc(rxbyte+1);
+   char rxbuffer[rxbyte +1];
+   fgets(rxbuffer, rxbyte,stdin);
+   strcpy((char*)rxbuf, (char*)rxbuffer);
+   bs_1.rxbuffer = rxbuffer;
+   printf("Recieving %s \n", (uint8_t*)rxbuffer);
    //strcpy(bs_1->rxbuffer, rxbuf);
 
 }
 
 static void transmit_stream (const uint8_t *txbuf, size_t txbyte)
 {
-    bs_1->txbuffer = (const uint8_t *)malloc(txbyte+1);
-    strcpy((char *)bs_1->txbuffer,(char *) txbuf);
+     bs_1.txbuffer = (const uint8_t *)malloc(txbyte+1);
+    char txbuffer[txbyte +1];
+     
+    strcpy((char *)txbuffer,(char *) txbuf);
+    bs_1.txbuffer = txbuffer;
+    printf("transmitting %p \n",txbuffer);
 }
 static void i2c_lld_safety_timeout(void *p)
 {
