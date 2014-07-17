@@ -30,33 +30,12 @@ static WORKING_AREA(myThreadWorkingArea, 128);
  */
 EXTDriver EXTD1;
 
-static void* ioportOn(void *vptr) {
-
-  (void)vptr;
-
-  while (TRUE) {
-    palSetPad(IOPORT1, 0);
-    printf("IOPORT1 ON\n");
-    chThdSleepMilliseconds(1000);
-  }
-
-  return NULL;
-}
-
-static void threadStart(void) {
-  (void)chThdCreateStatic(myThreadWorkingArea,
-                          sizeof(myThreadWorkingArea),
-                          NORMALPRIO,    /* Initial priority.    */
-                          ioportOn,      /* Thread function.     */
-                          NULL);         /* Thread parameter.    */
-}
-
 static void led4off(void *arg) {
 
   (void)arg;
 
-  palClearPad(IOPORT1, 0);
   printf("led4 OFF\n");
+  palClearPad(IOPORT1, 0);
 
 }
 
@@ -67,8 +46,8 @@ static void extcb1(EXTDriver *extp, expchannel_t channel) {
   (void)extp;
   (void)channel;
 
-  palSetPad(IOPORT1, 0);
   printf("led4 ON\n");
+  palSetPad(IOPORT1, 0);
 
   chSysLockFromIsr();
   if (chVTIsArmedI(&vt4))
@@ -81,27 +60,6 @@ static void extcb1(EXTDriver *extp, expchannel_t channel) {
 static const EXTConfig extcfg = {
   {
     {EXT_CH_MODE_BOTH_EDGES | EXT_CH_MODE_AUTOSTART, extcb1},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
     {EXT_CH_MODE_DISABLED, NULL}
   }
 };
@@ -125,7 +83,6 @@ int main(void) {
    * Activates the EXT driver 1.
    */
   extStart(&EXTD1, &extcfg);
-  threadStart();
 
   /*
    * Normal main() thread activity, in this demo it enables and disables the
@@ -133,8 +90,10 @@ int main(void) {
    */
   while (TRUE) {
     chThdSleepMilliseconds(5000);
+    printf("extChannelDisable\n");
     extChannelDisable(&EXTD1, 0);
     chThdSleepMilliseconds(5000);
+    printf("extChannelEnable\n");
     extChannelEnable(&EXTD1, 0);
   }
 }
