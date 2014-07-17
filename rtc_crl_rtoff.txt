@@ -1,6 +1,0 @@
-os/hal/platforms/Posix/rtc_lld.c:#define rtc_lld_wait_write() {while ((RTC->CRL & RTC_CRL_RTOFF) == 0);}
-os/hal/platforms/STM32/RTCv1/rtc_lld.c:#define rtc_lld_wait_write() {while ((RTC->CRL & RTC_CRL_RTOFF) == 0);}
-os/hal/platforms/STM32F1xx/stm32f10x.h:#define  RTC_CRL_RTOFF                       ((uint8_t)0x20)               /*!< RTC operation OFF */
-ChibiOS-RT/os/hal/platforms/STM32/RTCv1/rtc_lld.c:#define rtc_lld_wait_write() {while ((RTC->CRL & RTC_CRL_RTOFF) == 0);}
-ChibiOS-RT/os/hal/platforms/STM32F1xx/stm32f10x.h:#define  RTC_CRL_RTOFF                       ((uint8_t)0x20)               /*!< RTC operation OFF */
-testhal/Posix/RTC/rtc_lld.c:#define rtc_lld_wait_write() {while ((RTC->CRL & RTC_CRL_RTOFF) == 0);}
