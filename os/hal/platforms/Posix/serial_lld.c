@@ -53,6 +53,8 @@ SerialDriver SD2;
 
 /** @brief Driver default configuration.*/
 static const SerialConfig default_config = {
+  SIM_SD1_PORT,
+  SIM_SD2_PORT
 };
 
 static u_long nb = 1;
@@ -247,12 +249,12 @@ void sd_lld_start(SerialDriver *sdp, const SerialConfig *config) {
 
 #if USE_SIM_SERIAL1
   if (sdp == &SD1)
-    init(&SD1, SIM_SD1_PORT);
+    init(&SD1, config->sd1_port);
 #endif
 
 #if USE_SIM_SERIAL2
   if (sdp == &SD2)
-    init(&SD2, SIM_SD2_PORT);
+    init(&SD2, config->sd2_port);
 #endif
 }
 

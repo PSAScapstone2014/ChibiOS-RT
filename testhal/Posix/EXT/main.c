@@ -14,7 +14,6 @@
     limitations under the License.
 */
 
-#include <stdio.h>
 #include "ch.h"
 #include "hal.h"
 #include <pthread.h>
@@ -90,10 +89,8 @@ int main(void) {
    */
   while (TRUE) {
     chThdSleepMilliseconds(5000);
-    printf("extChannelDisable\n");
     extChannelDisable(&EXTD1, 0);
     chThdSleepMilliseconds(5000);
-    printf("extChannelEnable\n");
     extChannelEnable(&EXTD1, 0);
   }
 }
