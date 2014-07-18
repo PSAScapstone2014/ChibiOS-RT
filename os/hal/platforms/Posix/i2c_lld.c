@@ -51,65 +51,35 @@ I2CDriver I2CD1;
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 
-//simulate dmaStreamAllocate using malloc the buffer  once called
-static bool allocate_stream(buffer_stream  bs)
-{
-
-   /* if(bs == NULL)
-    {
-        return true;
-    }
-    else
-    {
-       bs.isMalloc = true;
-       return false;
-
-    }    
-*/
-    bs.isMalloc= true;
-    return false;
-}
-//frees the buffer
-static void release_stream(buffer_stream bs)
-{
-    free((void*)bs.rxbuffer); 
-    free((void*)bs.txbuffer); 
-    bs.isMalloc = false;
-
-}
 static void recieve_stream(uint8_t * rxbuf, size_t rxbyte)
 {
 
-   bs_1.rxbuffer = (uint8_t *)malloc(rxbyte+1);
    char rxbuffer[rxbyte +1];
    fgets(rxbuffer, rxbyte,stdin);
    strcpy((char*)rxbuf, (char*)rxbuffer);
-   bs_1.rxbuffer = rxbuffer;
-   printf("Recieving %s \n", (uint8_t*)rxbuffer);
+   printf("Recieving %p \n", (uint8_t*)rxbuffer);
    //strcpy(bs_1->rxbuffer, rxbuf);
 
 }
 
 static void transmit_stream (const uint8_t *txbuf, size_t txbyte)
 {
-     bs_1.txbuffer = (const uint8_t *)malloc(txbyte+1);
     char txbuffer[txbyte +1];
      
     strcpy((char *)txbuffer,(char *) txbuf);
-    bs_1.txbuffer = txbuffer;
     printf("transmitting %p \n",txbuffer);
 }
 static void i2c_lld_safety_timeout(void *p)
 {
     I2CDriver *i2cp = (I2CDriver *)p;
-    chSysLock();
+    chSysLockFromIsr();
     if(i2cp->thread){
         Thread *tp = i2cp->thread;
         i2cp->thread = NULL;
         tp->p_u.rdymsg = RDY_TIMEOUT;
         chSchReadyI(tp);
     }
-        chSysUnlock();
+        chSysUnlockFromIsr();
 }
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
@@ -141,9 +111,6 @@ void i2c_lld_start(I2CDriver *i2cp) {
     /* Enables the peripheral.*/
 #if PLATFORM_I2C_USE_I2C1
      if (&I2CD1 == i2cp) {
-        bool b;
-        b = allocate_stream(bs_1);
-        chDbgAssert(!b, "i2c_lld_start(), #1", "stream already allocated");
        
     }
 #endif /* PLATFORM_I2C_USE_I2C1 */
@@ -163,7 +130,6 @@ void i2c_lld_stop(I2CDriver *i2cp) {
 
   if (i2cp->state != I2C_STOP) {
     /* Resets the peripheral.*/
-    release_stream(bs_1);
     /* Disables the peripheral.*/
 #if PLATFORM_I2C_USE_I2C1
     if (&I2CD1 == i2cp) {
@@ -203,7 +169,6 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
    VirtualTimer vt;
    chDbgCheck((rxbytes > 1), "i2c_lld_master_recive_timeout");
 
-   
    if(timeout != TIME_INFINITE)
    {
        chVTSetI(&vt, timeout, i2c_lld_safety_timeout, (void *)i2cp);
