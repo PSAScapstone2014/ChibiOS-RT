@@ -81,6 +81,14 @@ typedef struct {
    * @brief Virtual port 2 setup data.
    */
   sim_vio_port_t    VP2Data;
+  /**
+   * @brief Virtual port 2 setup data.
+   */
+  sim_vio_port_t    VP3Data;
+  /**
+   * @brief Virtual port 2 setup data.
+   */
+  sim_vio_port_t    VP4Data;
 } PALConfig;
 
 /**
@@ -123,6 +131,16 @@ typedef sim_vio_port_t *ioportid_t;
  */
 #define IOPORT2         (&vio_port_2)
 
+/**
+ * @brief   VIO port 2 identifier.
+ */
+#define IOPORT3         (&vio_port_3)
+
+/**
+ * @brief   VIO port 2 identifier.
+ */
+#define IOPORT4         (&vio_port_4)
+
 /*===========================================================================*/
 /* Implementation, some of the following macros could be implemented as      */
 /* functions, if so please put them in pal_lld.c.                            */
@@ -137,7 +155,9 @@ typedef sim_vio_port_t *ioportid_t;
  */
 #define pal_lld_init(config)                                                \
   (vio_port_1 = (config)->VP1Data,                                          \
-   vio_port_2 = (config)->VP2Data)
+   vio_port_2 = (config)->VP2Data,                                          \
+   vio_port_3 = (config)->VP3Data,                                          \
+   vio_port_4 = (config)->VP4Data)
 
 /**
  * @brief   Reads the physical I/O port states.
@@ -189,6 +209,8 @@ typedef sim_vio_port_t *ioportid_t;
 #if !defined(__DOXYGEN__)
 extern sim_vio_port_t vio_port_1;
 extern sim_vio_port_t vio_port_2;
+extern sim_vio_port_t vio_port_3;
+extern sim_vio_port_t vio_port_4;
 extern const PALConfig pal_default_config;
 #endif
 

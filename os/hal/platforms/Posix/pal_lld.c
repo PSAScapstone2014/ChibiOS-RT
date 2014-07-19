@@ -40,6 +40,15 @@ sim_vio_port_t vio_port_1;
  * @brief   VIO2 simulated port.
  */
 sim_vio_port_t vio_port_2;
+/**
+ * @brief   VIO1 simulated port.
+ */
+sim_vio_port_t vio_port_3;
+
+/**
+ * @brief   VIO2 simulated port.
+ */
+sim_vio_port_t vio_port_4;
 
 /*===========================================================================*/
 /* Driver local variables and types.                                         */
