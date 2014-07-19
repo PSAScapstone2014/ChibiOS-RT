@@ -24,6 +24,8 @@
 #if HAL_USE_PAL || defined(__DOXYGEN__)
 const PALConfig pal_default_config = {
  {0, 0, 0},
+ {0, 0, 0},
+ {0, 0, 0},
  {0, 0, 0}
 };
 #endif
