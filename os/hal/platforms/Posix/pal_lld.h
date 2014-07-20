@@ -22,9 +22,6 @@
  * @{
  */
 
-/* Temporarily include stdio.h */
-#include <stdio.h>
-
 #ifndef _PAL_LLD_H_
 #define _PAL_LLD_H_
 
@@ -181,15 +178,7 @@ typedef sim_vio_port_t *ioportid_t;
  */
 #define pal_lld_readlatch(port) ((port)->latch)
 
-/**
- * @brief   Writes a bits mask on a I/O port.
- *
- * @param[in] port      port identifier
- * @param[in] bits      bits to be written on the specified port
- *
- * @notapi
- */
-#define pal_lld_writeport(port, bits) ((port)->latch = (bits))
+#define pal_lld_writeport(port, bits) _pal_lld_writeport((port), (bits))
 
 /**
  * @brief   Pads group mode setup.
@@ -217,6 +206,7 @@ extern const PALConfig pal_default_config;
 #ifdef __cplusplus
 extern "C" {
 #endif
+  void _pal_lld_writeport(ioportid_t port, uint32_t bits);
   void _pal_lld_setgroupmode(ioportid_t port,
                              ioportmask_t mask,
                              iomode_t mode);

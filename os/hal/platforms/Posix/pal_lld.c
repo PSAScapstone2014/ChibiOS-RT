@@ -24,6 +24,8 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "simio.h"
+#include "chprintf.h"
 
 #if HAL_USE_PAL || defined(__DOXYGEN__)
 
@@ -58,6 +60,19 @@ sim_vio_port_t vio_port_4;
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 
+char* port_lookup(ioportid_t port) {
+  if (port == IOPORT1)
+    return "IOPORT1";
+  else if (port == IOPORT2)
+    return "IOPORT2";
+  else if (port == IOPORT3)
+    return "IOPORT3";
+  else if (port == IOPORT4)
+    return "IOPORT4";
+  else
+    return "IOPORT_UNKNOWN";
+}
+
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
@@ -65,6 +80,19 @@ sim_vio_port_t vio_port_4;
 /*===========================================================================*/
 /* Driver exported functions.                                                */
 /*===========================================================================*/
+
+/**
+ * @brief   Writes a bits mask on a I/O port.
+ *
+ * @param[in] port      port identifier
+ * @param[in] bits      bits to be written on the specified port
+ *
+ * @notapi
+ */
+ void _pal_lld_writeport(ioportid_t port, uint32_t bits) {
+  sim_printf("set %s latch to 0x%02x (was 0x%02x)\n", port_lookup(port), bits, port->latch);
+  port->latch = bits;
+}
 
 /**
  * @brief Pads mode setup.
@@ -97,14 +125,6 @@ void _pal_lld_setgroupmode(ioportid_t port,
     port->dir |= mask;
     break;
   }
-
-  printf ("%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n",
-          "port -> dir:", port -> dir,
-          "port -> latch:", port -> latch,
-          "port -> pin:", port -> pin,
-          "mask:", mask,
-	  "mode:", mode
-         );
 }
 
 #endif /* HAL_USE_PAL */

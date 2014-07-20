@@ -48,9 +48,13 @@ static void ext_input_handler(char *buf, void *vptr) {
   uint32_t channel;
   EXTDriver *extp = vptr;
 
+  dbg_check_enter_isr();
+
   channel = atoi(buf);
   if (channel < EXT_MAX_CHANNELS && extp->config->channels[channel].cb)
     extp->config->channels[channel].cb(extp, channel);
+
+  dbg_check_leave_isr();
 }
 
 
@@ -87,7 +91,6 @@ EXTDriver EXTD1;
  * @notapi
  */
 void ext_lld_init(void) {
-
 #if PLATFORM_EXT_USE_EXT1
   /* Driver initialization.*/
   extObjectInit(&EXTD1);
@@ -103,18 +106,17 @@ void ext_lld_init(void) {
  * @notapi
  */
 void ext_lld_start(EXTDriver *extp) {
-
   if (extp->state == EXT_STOP) {
     /* Enables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
+      sim_io_start();
+      sim_input_cb(ext_input_handler, (void*)extp);
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
   }
 
   /* Configures the peripheral.*/
-  sim_io_init(28001, 28002);
-  sim_input_cb(ext_input_handler, (void*)extp);
 }
 
 /**
@@ -125,14 +127,13 @@ void ext_lld_start(EXTDriver *extp) {
  * @notapi
  */
 void ext_lld_stop(EXTDriver *extp) {
-
   if (extp->state == EXT_ACTIVE) {
     /* Resets the peripheral.*/
 
     /* Disables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
-
+      sim_io_stop();
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
   }
@@ -147,15 +148,9 @@ void ext_lld_stop(EXTDriver *extp) {
  * @notapi
  */
 void ext_lld_channel_enable(EXTDriver *extp, expchannel_t channel) {
-  unsigned char msg[] = "extChannelEnable\n";
   (void)channel;
-
-  printf("%s", msg);
-  sim_output_puts(msg, sizeof msg);
-
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
-
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
 
@@ -170,12 +165,8 @@ void ext_lld_channel_enable(EXTDriver *extp, expchannel_t channel) {
  * @notapi
  */
 void ext_lld_channel_disable(EXTDriver *extp, expchannel_t channel) {
-  unsigned char msg[] = "extChannelDisable\n";
   (void)extp;
   (void)channel;
-
-  printf("%s", msg);
-  sim_output_puts(msg, sizeof msg);
 }
 
 #endif /* HAL_USE_EXT */

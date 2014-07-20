@@ -38,23 +38,6 @@
  */
 #define EXT_MAX_CHANNELS    20
 
-/**
- * @name    STM32-specific EXT channel modes FIXME
- * @{
- */
-#define EXT_MODE_GPIO_MASK  0xF0        /**< @brief Port field mask.        */
-#define EXT_MODE_GPIO_OFF   4           /**< @brief Port field offset.      */
-#define EXT_MODE_GPIOA      0x00        /**< @brief GPIOA identifier.       */
-#define EXT_MODE_GPIOB      0x10        /**< @brief GPIOB identifier.       */
-#define EXT_MODE_GPIOC      0x20        /**< @brief GPIOC identifier.       */
-#define EXT_MODE_GPIOD      0x30        /**< @brief GPIOD identifier.       */
-#define EXT_MODE_GPIOE      0x40        /**< @brief GPIOE identifier.       */
-#define EXT_MODE_GPIOF      0x50        /**< @brief GPIOF identifier.       */
-#define EXT_MODE_GPIOG      0x60        /**< @brief GPIOG identifier.       */
-#define EXT_MODE_GPIOH      0x70        /**< @brief GPIOH identifier.       */
-#define EXT_MODE_GPIOI      0x80        /**< @brief GPIOI identifier.       */
-/** @} */
-
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/

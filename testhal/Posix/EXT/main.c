@@ -14,11 +14,11 @@
     limitations under the License.
 */
 
+#include <unistd.h>
+#include <stdlib.h>
+
 #include "ch.h"
 #include "hal.h"
-#include <pthread.h>
-
-static WORKING_AREA(myThreadWorkingArea, 128);
 
 /*===========================================================================*/
 /* Driver exported variables.                                                */
@@ -33,7 +33,6 @@ static void led4off(void *arg) {
 
   (void)arg;
 
-  printf("led4 OFF\n");
   palClearPad(IOPORT1, 0);
 
 }
@@ -45,7 +44,6 @@ static void extcb1(EXTDriver *extp, expchannel_t channel) {
   (void)extp;
   (void)channel;
 
-  printf("led4 ON\n");
   palSetPad(IOPORT1, 0);
 
   chSysLockFromIsr();
@@ -58,15 +56,59 @@ static void extcb1(EXTDriver *extp, expchannel_t channel) {
 
 static const EXTConfig extcfg = {
   {
-    {EXT_CH_MODE_BOTH_EDGES | EXT_CH_MODE_AUTOSTART, extcb1},
-    {EXT_CH_MODE_DISABLED, NULL}
+    { EXT_CH_MODE_BOTH_EDGES | EXT_CH_MODE_AUTOSTART, extcb1},
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL },
+    { EXT_CH_MODE_DISABLED, NULL }
   }
 };
+
+void argParse(int argc, char **argv) {
+  SerialConfig sdcfg = {0, 0};
+  int opt;
+
+  while ((opt = getopt(argc, argv, "i:o:")) != -1) {
+    switch (opt) {
+      case 'i':
+        sdcfg.sd1_port = atoi(optarg);
+        break;
+      case 'o':
+        sdcfg.sd2_port = atoi(optarg);
+        break;
+      default:
+        fprintf(stderr, "Usage: %s [-t nsecs] [-n] name\n",
+                        argv[0]);
+        exit(EXIT_FAILURE);
+      }
+    }
+
+  /*
+   * Activates the serial driver for network IO.
+   */
+  sdStart(&SD1, &sdcfg);
+  sdStart(&SD2, &sdcfg);
+}
 
 /*
  * Application entry point.
  */
-int main(void) {
+int main(int argc, char **argv) {
 
   /*
    * System initializations.
@@ -77,6 +119,11 @@ int main(void) {
    */
   halInit();
   chSysInit();
+
+  /*
+   * Handle command line
+   */
+  argParse(argc, argv);
 
   /*
    * Activates the EXT driver 1.
