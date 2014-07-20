@@ -21,7 +21,7 @@ CC   = $(TRGT)gcc
 AS   = $(TRGT)gcc -x assembler-with-cpp
 
 # List all default C defines here, like -D_DEBUG=1
-DDEFS = -DSIMULATOR -DSHELL_USE_IPRINTF=FALSE
+DDEFS = -DSHELL_USE_IPRINTF=FALSE
 
 # List all default ASM defines here, like -D_DEBUG=1
 DADEFS =
@@ -60,7 +60,7 @@ CHIBIOS = ../../..
 include $(CHIBIOS)/boards/simulator/board.mk
 include ${CHIBIOS}/os/hal/hal.mk
 include ${CHIBIOS}/os/hal/platforms/Posix/platform.mk
-include ${CHIBIOS}/os/ports/GCC/SIMIA32/port.mk
+include ${CHIBIOS}/os/ports/GCC/SIMSTM32/port.mk
 include ${CHIBIOS}/os/kernel/kernel.mk
 include ${CHIBIOS}/test/test.mk
 
