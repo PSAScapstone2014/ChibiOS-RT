@@ -48,13 +48,9 @@ static void ext_input_handler(char *buf, void *vptr) {
   uint32_t channel;
   EXTDriver *extp = vptr;
 
-  dbg_check_enter_isr();
-
   channel = atoi(buf);
   if (channel < EXT_MAX_CHANNELS && extp->config->channels[channel].cb)
     extp->config->channels[channel].cb(extp, channel);
-
-  dbg_check_leave_isr();
 }
 
 
