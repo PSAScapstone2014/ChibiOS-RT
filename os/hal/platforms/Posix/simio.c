@@ -3,17 +3,22 @@
 #include "simio.h"
 #include "chprintf.h"
 
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <stdarg.h>
 
 #define THD_SIZE 256
 
+static SerialConfig sdcfg;
 static EventListener sd1fel;
 static EventListener sd2fel;
+
 static Thread *itp;
 static Thread *otp;
 static Thread *etp;
 
-struct {
+static struct {
   simio_cb_t  fp;
   void*       arg;
 } input_cb;
@@ -183,4 +188,38 @@ void sim_io_start() {
 
 void sim_io_stop() {
   etp->p_flags |= THD_TERMINATE;
+}
+
+void sim_getopt(int argc, char **argv) {
+  int opt;
+
+  while ((opt = getopt(argc, argv, "i:o:")) != -1) {
+    switch (opt) {
+      case 'i':
+        sdcfg.sd1_port = atoi(optarg);
+        break;
+      case 'o':
+        sdcfg.sd2_port = atoi(optarg);
+        break;
+      default:
+        fprintf(stderr, "Usage: %s [-t nsecs] [-n] name\n",
+                        argv[0]);
+        exit(EXIT_FAILURE);
+    }
+  }
+  /* reset getopt */
+  optind = 1;
+}
+
+/*
+ * Activates the serial driver for network IO.
+ */
+void sim_sdStart() {
+  sdStart(&SD1, &sdcfg);
+  sdStart(&SD2, &sdcfg);
+}
+
+void sim_sdStop() {
+  sdStop(&SD1);
+  sdStop(&SD2);
 }
