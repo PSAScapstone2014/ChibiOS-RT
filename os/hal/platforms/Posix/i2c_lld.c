@@ -25,6 +25,7 @@
 #include "ch.h"
 #include "hal.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #if HAL_USE_I2C || defined(__DOXYGEN__)
 
@@ -54,21 +55,17 @@ I2CDriver I2CD1;
 static void recieve_stream(uint8_t * rxbuf, size_t rxbyte)
 {
 
-   char rxbuffer[rxbyte +1];
-   fgets(rxbuffer, rxbyte,stdin);
-   strcpy((char*)rxbuf, (char*)rxbuffer);
-   printf("Recieving %p \n", (uint8_t*)rxbuffer);
-   //strcpy(bs_1->rxbuffer, rxbuf);
+   fgets(rxbuf, rxbyte,stdin);
+   printf("Recieving %s\n", rxbuf);
 
 }
 
 static void transmit_stream (const uint8_t *txbuf, size_t txbyte)
 {
-    char txbuffer[txbyte +1];
-     
-    strcpy((char *)txbuffer,(char *) txbuf);
-    printf("transmitting %p \n",txbuffer);
+    printf("transmitting %s \n",txbuf);
 }
+
+
 static void i2c_lld_safety_timeout(void *p)
 {
     I2CDriver *i2cp = (I2CDriver *)p;
@@ -225,13 +222,6 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
                                       uint8_t *rxbuf, size_t rxbytes,
                                       systime_t timeout) {
 
-  (void)i2cp;
-  (void)addr;
-  (void)txbuf;
-  (void)txbytes;
-  (void)rxbuf;
-  (void)rxbytes;
-  (void)timeout;
    VirtualTimer vt;
 
    
