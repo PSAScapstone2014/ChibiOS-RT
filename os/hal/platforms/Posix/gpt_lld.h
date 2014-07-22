@@ -25,6 +25,9 @@
 #ifndef _GPT_LLD_H_
 #define _GPT_LLD_H_
 
+#include <sys/types.h>
+#include <time.h>
+
 #if HAL_USE_GPT || defined(__DOXYGEN__)
 
 /*===========================================================================*/
@@ -103,6 +106,9 @@ struct GPTDriver {
   GPT_DRIVER_EXT_FIELDS
 #endif
   /* End of the mandatory fields.*/
+  /* Pointer to itimer structure */
+  struct itimerspec         *tmr;
+  struct sigevent           *sigev;
 };
 
 /*===========================================================================*/

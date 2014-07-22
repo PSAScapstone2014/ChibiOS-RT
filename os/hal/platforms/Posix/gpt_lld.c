@@ -15,14 +15,14 @@
 */
 
 /**
- * @file    templates/gpt_lld.c
+ * @file    Posix/gpt_lld.c
  * @brief   GPT Driver subsystem low level driver source template.
  *
  * @addtogroup GPT
  * @{
  */
 
-#include <time.h>
+#include <sys/time.h>
 #include "ch.h"
 #include "hal.h"
 
@@ -44,12 +44,31 @@
 #endif
 
 /*===========================================================================*/
-/* Driver local variables and types.                                         */
+/* Driver local variables and types.                                         
+ */
+
+timer_t timer;
 /*===========================================================================*/
 
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
+
+/**
+* @brief Shared IRQ handler.
+*
+* @param[in] gptp pointer to a @p GPTDriver object
+*/
+static void gpt_lld_serve_interrupt(GPTDriver *gptp) {
+
+  //Need to point to gpt tmr itimer variable. 
+  timer = gptp->tmr; 
+  if (gptp->state == GPT_ONESHOT) {
+    gptp->state = GPT_READY; /* Back in GPT_READY state. */
+    gpt_lld_stop_timer(gptp); /* Timer automatically stopped. */
+  }
+  gptp->config->callback(gptp);
+}
 
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
@@ -68,6 +87,7 @@
 void gpt_lld_init(void) {
 
 #if POSIX_GPT_USE_TIM1
+  GPTD1.timer = 0;
   /* Driver initialization.*/
   gptObjectInit(&GPTD1);
 #endif
@@ -81,17 +101,12 @@ void gpt_lld_init(void) {
  * @notapi
  */
 void gpt_lld_start(GPTDriver *gptp) {
-  uint16_t psc;
-
   if (gptp->state == GPT_STOP) {
     /* Enables the peripheral.*/
+
 #if POSIX_GPT_USE_GPT1
     if (&GPTD1 == gptp) {
-      /*Enable clock*/
-      /*Reset clock*/
-      /*Set priority of interrupt handler & enable it*/
-      gptp->state = GPT_READY;
-      timer_create(gptp->state, SIGEV_NONE, sigev_value.sival_int);
+      timer = timer_create(CLOCK_REALTIME, &gptp->sigev, &gptp->tmr);
     }
 #endif /* POSIX_GPT_USE_GPT1 */
   }
@@ -110,13 +125,12 @@ void gpt_lld_stop(GPTDriver *gptp) {
 
   if (gptp->state == GPT_READY) {
     /* Resets the peripheral.*/
-    gptp->state = GPT_STOP;
     
 
     /* Disables the peripheral.*/
 #if POSIX_GPT_USE_GPT1
     if (&GPTD1 == gptp) {
-      timersettime(gptp->state, 0, 0);
+      timer_delete(timer);
     }
 #endif /* POSIX_GPT_USE_GPT1 */
   }
@@ -134,8 +148,10 @@ void gpt_lld_start_timer(GPTDriver *gptp, gptcnt_t interval) {
 
   (void)gptp;
   (void)interval;
-  timer_settime(gptp->state, TIME_ABSTIME, null, interval);
-
+  gptp->tmr->it_value.tv_sec = interval / 1000000000;
+  gptp->tmr->it_value.tv_nsec = interval % 100000000;
+  gptp->tmr->it_interval.tv_sec = gptp->tmr->it_value.tv_sec;
+  gptp->tmr->it_interval.tv_nsec = gptp->tmr->it_value.tv_nsec;
 }
 
 /**
@@ -148,8 +164,13 @@ void gpt_lld_start_timer(GPTDriver *gptp, gptcnt_t interval) {
 void gpt_lld_stop_timer(GPTDriver *gptp) {
 
   (void)gptp;
-  gptp->state = GPT_STOP; 
-
+  struct itimerspec *old_tmr = gptp->tmr;
+  gptp->tmr->it_value.tv_sec = 0;
+  gptp->tmr->it_value.tv_nsec = 0;
+  gptp->tmr->it_interval.tv_sec = gptp->tmr->it_value.tv_sec;
+  gptp->tmr->it_interval.tv_nsec = gptp->tmr->it_value.tv_nsec;
+  const struct itimerspec *new_tmr = gptp->tmr;
+  timer_settime(timer, TIMER_ABSTIME, &new_tmr, &old_tmr);
 }
 
 /**
@@ -167,8 +188,6 @@ void gpt_lld_polled_delay(GPTDriver *gptp, gptcnt_t interval) {
 
   (void)gptp;
   (void)interval;
-  
-
 }
 
 #endif /* HAL_USE_GPT */
