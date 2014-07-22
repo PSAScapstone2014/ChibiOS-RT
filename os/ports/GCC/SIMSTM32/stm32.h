@@ -1,6 +1,9 @@
 #ifndef STM32_H
 #define STM32_H
 
+/* Simualte a STM32F4XX */
+#define STM32F4XX
+
 /**
  * @name    STM32-specific EXT channel modes
  * @{
@@ -25,6 +28,40 @@
 #define GPIOB IOPORT2
 #define GPIOC IOPORT3
 #define GPIOD IOPORT4
+
+/*
+ * NONSTANDARD_STM32F4_BARTHESS1 pins
+ */
+#define GPIOB_RECEIVER_PPM      0
+#define GPIOB_TACHOMETER        1
+#define GPIOB_BOOT1             2
+#define GPIOB_JTDO              3
+#define GPIOB_NJTRST            4
+#define GPIOB_LED_R             6
+#define GPIOB_LED_G             7
+#define GPIOB_LED_B             8
+#define GPIOB_I2C2_SCL          10
+#define GPIOB_I2C2_SDA          11
+
+/*
+ * OLIMEX_STM32_E407_REV_D pins
+ */
+#define GPIOC_PIN0                  0
+#define GPIOC_ETH_RMII_MDC          1
+#define GPIOC_SPI2_MISO             2
+#define GPIOC_SPI2_MOSI             3
+#define GPIOC_ETH_RMII_RXD0         4
+#define GPIOC_ETH_RMII_RXD1         5
+#define GPIOC_USART6_TX             6
+#define GPIOC_USART6_RX             7
+#define GPIOC_SD_D0                 8
+#define GPIOC_SD_D1                 9
+#define GPIOC_SD_D2                 10
+#define GPIOC_SD_D3                 11
+#define GPIOC_SD_CLK                12
+#define GPIOC_LED                   13
+#define GPIOC_OSC32_IN              14
+#define GPIOC_OSC32_OUT             15
 
 /**
  * @brief   Managed RAM size.

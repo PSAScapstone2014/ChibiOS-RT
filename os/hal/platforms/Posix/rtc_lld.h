@@ -49,31 +49,9 @@
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/
 
-/**
- * @name    Configuration options
- * @{
- */
-/*
- * RTC driver system settings.
- */
-#define STM32_RTC_IRQ_PRIORITY      15
-/** @} */
-
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
-/* Diked this section out inside git-hub to make sure. This
-    file is like a the undead. --Tony B.
-    
-#if HAL_USE_RTC && !STM32_HAS_RTC
-#error "RTC not present in the selected device"
-#endif
-
-#if STM32_RTCCLK == 0
-#error "RTC clock not enabled"
-#endif
-
-*/
 
 /*===========================================================================*/
 /* Driver data structures and types.                                         */

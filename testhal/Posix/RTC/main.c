@@ -14,93 +14,102 @@
     limitations under the License.
 */
 
-#include <stdio.h>
 #include "ch.h"
 #include "hal.h"
+#include "chrtclib.h"
 
-static void led4off(void *arg) {
+#include <stdio.h>
 
+RTCTime timespec;
+RTCAlarm alarmspec;
+
+#define TEST_ALARM_WAKEUP FALSE
+
+
+#if TEST_ALARM_WAKEUP
+
+/* sleep indicator thread */
+static WORKING_AREA(blinkWA, 128);
+static msg_t blink_thd(void *arg){
   (void)arg;
-
-  // palClearPad(GPIOC, GPIOC_LED4);
-  printf("led4 OFF\n");
-
-}
-
-/* Triggered when the button is pressed or released. The LED4 is set to ON.*/
-static void extcb1(EXTDriver *extp, expchannel_t channel) {
-  static VirtualTimer vt4;
-
-  (void)extp;
-  (void)channel;
-
-  // palSetPad(GPIOC, GPIOC_LED4);
-  printf("led4 ON\n");
-
-  chSysLockFromIsr();
-  if (chVTIsArmedI(&vt4))
-    chVTResetI(&vt4);
-  /* LED4 set to OFF after 200mS.*/
-  chVTSetI(&vt4, MS2ST(200), led4off, NULL);
-  chSysUnlockFromIsr();
-}
-
-static const EXTConfig extcfg = {
-  {
-    {EXT_CH_MODE_BOTH_EDGES | EXT_CH_MODE_AUTOSTART, extcb1},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL},
-    {EXT_CH_MODE_DISABLED, NULL}
+  while (TRUE) {
+    chThdSleepMilliseconds(100);
+    palTogglePad(GPIOC, GPIOC_LED);
   }
-};
+  return 0;
+}
 
-/*
- * Application entry point.
- */
 int main(void) {
-
-  /*
-   * System initializations.
-   * - HAL initialization, this also initializes the configured device drivers
-   *   and performs the board-specific initializations.
-   * - Kernel initialization, the main() function becomes a thread and the
-   *   RTOS is active.
-   */
   halInit();
   chSysInit();
 
-  /*
-   * Activates the EXT driver 1.
-   */
-  extStart(&EXTD1, &extcfg);
+  chThdCreateStatic(blinkWA, sizeof(blinkWA), NORMALPRIO, blink_thd, NULL);
+  /* set alarm in near future */
+  rtcGetTime(&RTCD1, &timespec);
+  alarmspec.tv_sec = timespec.tv_sec + 30;
+  rtcSetAlarm(&RTCD1, 0, &alarmspec);
 
-  /*
-   * Normal main() thread activity, in this demo it enables and disables the
-   * button EXT channel using 5 seconds intervals.
-   */
-  while (TRUE) {
-    chThdSleepMilliseconds(5000);
-    extChannelDisable(&EXTD1, 0);
-    chThdSleepMilliseconds(5000);
-    extChannelEnable(&EXTD1, 0);
+  while (TRUE){
+    chThdSleepSeconds(10);
+  }
+  return 0;
+}
+
+#else /* TEST_ALARM_WAKEUP */
+
+/* Manually reloaded test alarm period.*/
+#define RTC_ALARMPERIOD   10
+
+BinarySemaphore alarm_sem;
+
+static void my_cb(RTCDriver *rtcp, rtcevent_t event) {
+  (void)rtcp;
+
+  switch (event) {
+  case RTC_EVENT_OVERFLOW:
+    palTogglePad(GPIOC, GPIOC_LED);
+    break;
+  case RTC_EVENT_SECOND:
+    /* palTogglePad(GPIOC, GPIOC_LED); */
+    break;
+  case RTC_EVENT_ALARM:
+    palTogglePad(GPIOC, GPIOC_LED);
+    chSysLockFromIsr();
+    chBSemSignalI(&alarm_sem);
+    chSysUnlockFromIsr();
+    break;
+  default:
+    printf("ERROR my_cb unknown event\n");
+    break;
   }
 }
+
+int main(void) {
+  msg_t status = RDY_TIMEOUT;
+
+  halInit();
+  chSysInit();
+  chBSemInit(&alarm_sem, TRUE);
+
+  rtcGetTime(&RTCD1, &timespec);
+  alarmspec.tv_sec = timespec.tv_sec + RTC_ALARMPERIOD;
+  rtcSetAlarm(&RTCD1, 0, &alarmspec);
+
+  rtcSetCallback(&RTCD1, my_cb);
+  while (TRUE){
+
+    /* Wait until alarm callback signaled semaphore.*/
+    status = chBSemWaitTimeout(&alarm_sem, S2ST(RTC_ALARMPERIOD + 5));
+
+    if (status == RDY_TIMEOUT){
+      chSysHalt();
+    }
+    else{
+      rtcGetTime(&RTCD1, &timespec);
+      alarmspec.tv_sec = timespec.tv_sec + RTC_ALARMPERIOD;
+      rtcSetAlarm(&RTCD1, 0, &alarmspec);
+    }
+  }
+  return 0;
+}
+#endif /* TEST_ALARM_WAKEUP */
