@@ -41,18 +41,10 @@ static void led4off(void *arg) {
 /* Triggered when the button is pressed or released. The LED4 is set to ON.*/
 static void extcb1(EXTDriver *extp, expchannel_t channel) {
   static VirtualTimer vt4;
-
   (void)extp;
   (void)channel;
 
   palSetPad(IOPORT1, 0);
-
-  chSysLockFromIsr();
-  if (chVTIsArmedI(&vt4))
-    chVTResetI(&vt4);
-  /* LED4 set to OFF after 200mS.*/
-  chVTSetI(&vt4, MS2ST(200), led4off, NULL);
-  chSysUnlockFromIsr();
 }
 
 static const EXTConfig extcfg = {
