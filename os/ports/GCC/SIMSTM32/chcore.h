@@ -38,8 +38,8 @@
 /**
  * Unsupported.
  */
-#ifdef CH_DBG_ENABLE_STACK_CHECK
-# undef CH_DBG_ENABLE_STACK_CHECK
+#if CH_DBG_ENABLE_STACK_CHECK
+# error CH_DBG_ENABLE_STACK_CHECK is not supported on this platform
 #endif
 
 /**
