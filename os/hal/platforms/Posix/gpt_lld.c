@@ -23,6 +23,8 @@
  */
 
 #include <sys/time.h>
+#include <sys/times.h>
+#include <unistd.h>
 #include "ch.h"
 #include "hal.h"
 
@@ -188,6 +190,8 @@ void gpt_lld_polled_delay(GPTDriver *gptp, gptcnt_t interval) {
 
   (void)gptp;
   (void)interval;
+  unsigned int seconds = interval/sysconf(_SC_CLK_TCK);
+  gptp.sleep(seconds);
 }
 
 #endif /* HAL_USE_GPT */
