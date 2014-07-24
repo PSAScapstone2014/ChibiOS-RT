@@ -82,7 +82,7 @@ ADEFS 	  = $(DADEFS) $(UADEFS)
 LIBS      = $(DLIBS) $(ULIBS)
 
 # Various settings
-MCFLAGS   = -m32
+MCFLAGS   = -m32 -pthread
 ODFLAGS	  = -x --syms
 ASFLAGS   = $(MCFLAGS) -Wa,-amhls=$(LSTDIR)/$(notdir $(<:.s=.lst)) $(ADEFS)
 ASXFLAGS  = $(MCFLAGS) -Wa,-amhls=$(LSTDIR)/$(notdir $(<:.S=.lst)) $(ADEFS)

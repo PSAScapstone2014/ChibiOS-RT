@@ -49,8 +49,11 @@ static void ext_input_handler(char *buf, void *vptr) {
   EXTDriver *extp = vptr;
 
   channel = atoi(buf);
-  if (channel < EXT_MAX_CHANNELS && extp->config->channels[channel].cb)
+  if (channel < EXT_MAX_CHANNELS && extp->config->channels[channel].cb) {
+    dbg_check_enter_isr();
     extp->config->channels[channel].cb(extp, channel);
+    dbg_check_leave_isr();
+  }
 }
 
 
@@ -106,8 +109,7 @@ void ext_lld_start(EXTDriver *extp) {
     /* Enables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
-      sim_io_start();
-      sim_input_cb(ext_input_handler, (void*)extp);
+      sim_set_input_cb(ext_input_handler, (void*)extp);
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
   }

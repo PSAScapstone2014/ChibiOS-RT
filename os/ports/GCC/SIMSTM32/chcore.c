@@ -34,6 +34,48 @@
 
 #include "ch.h"
 #include "hal.h"
+#include <pthread.h>
+
+pthread_mutex_t sys_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t isr_lock = PTHREAD_MUTEX_INITIALIZER;
+
+/**
+ * @brief   Kernel-lock action.
+ * @details Usually this function just disables interrupts but may perform more
+ *          actions.
+ */
+void _port_lock(void) {
+  pthread_mutex_lock(&sys_lock);
+}
+
+/**
+ * @brief   Kernel-unlock action.
+ * @details Usually this function just enables interrupts but may perform more
+ *          actions.
+ */
+void _port_unlock(void) {
+  pthread_mutex_unlock(&sys_lock);
+}
+
+/**
+ * @brief   Kernel-lock action from an interrupt handler.
+ * @details This function is invoked before invoking I-class APIs from
+ *          interrupt handlers. The implementation is architecture dependent,
+ *          in its simplest form it is void.
+ */
+void _port_lock_from_isr(void) {
+  pthread_mutex_lock(&isr_lock);
+}
+
+/**
+ * @brief   Kernel-unlock action from an interrupt handler.
+ * @details This function is invoked after invoking I-class APIs from interrupt
+ *          handlers. The implementation is architecture dependent, in its
+ *          simplest form it is void.
+ */
+void _port_unlock_from_isr(void) {
+  pthread_mutex_unlock(&isr_lock);
+}
 
 /**
  * Performs a context switch between two threads.

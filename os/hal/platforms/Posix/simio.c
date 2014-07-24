@@ -4,31 +4,66 @@
 #include "chprintf.h"
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <stdarg.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
+#include <pthread.h>
+#include <signal.h>
 
 #define THD_SIZE 256
 
-static SerialConfig sdcfg;
-static EventListener sd1fel;
-static EventListener sd2fel;
-
-static Thread *itp;
-static Thread *otp;
-static Thread *etp;
+static pthread_t itp;
+static pthread_t otp;
+static int ofd;
 
 static struct {
   simio_cb_t  fp;
   void*       arg;
 } input_cb;
 
-BaseSequentialStream *output_stream = NULL;
+static SOCKET init_sock(uint16_t port) {
+  struct sockaddr_in sad;
+  struct protoent *prtp;
+  SOCKET sock = INVALID_SOCKET, sockval = 1;
+  socklen_t socklen = sizeof(sockval);
 
-/**
- * @brief   IO termination event source.
- */
-EventSource io_terminated;
+
+  if ((prtp = getprotobyname("tcp")) == NULL) {
+    printf("ERROR in simio getprotobyname()\n");
+    goto abort;
+  }
+
+  sock = socket(PF_INET, SOCK_STREAM, prtp->p_proto);
+  if (sock == INVALID_SOCKET) {
+    printf("ERROR in simio socket()\n");
+    goto abort;
+  }
+
+  setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &sockval, socklen);
+
+  memset(&sad, 0, sizeof(sad));
+  sad.sin_family = AF_INET;
+  sad.sin_addr.s_addr = INADDR_ANY;
+  sad.sin_port = htons(port);
+  if (bind(sock, (struct sockaddr *)&sad, sizeof(sad))) {
+    printf("ERROR in simio bind()\n");
+    goto abort;
+  }
+
+  if (listen(sock, 1) != 0) {
+    printf("ERROR simio listen()\n");
+    goto abort;
+  }
+
+  printf("simio listening on port %d\n", port);
+  return sock;
+
+abort:
+  if (sock != INVALID_SOCKET)
+    close(sock);
+  exit(EXIT_FAILURE);
+}
 
 /**
  * @brief   Reads a text line from input and sends it to the registered callback.
@@ -40,186 +75,125 @@ EventSource io_terminated;
  *
  * @notapi
  */
-static msg_t input_handler(void *vptr) {
-  BaseSequentialStream *chp = vptr;
+static void input_handler(int fd) {
   char buf[SIM_INPUT_MAX];
   uint32_t i;
 
-  for (i = 0; i < sizeof buf - 1; i++) {
+  for (i = 0; i < sizeof(buf) - 1; i++) {
     uint8_t c;
-    if (chSequentialStreamRead(chp, &c, 1) == 0)
-      return 0;
-    if (c == '\n')
+
+    if (read((int)fd, &c, 1) <= 0)
       break;
+
     buf[i] = c;
   }
+
+  /* always add null terminator */
   buf[i] = '\0';
 
-  input_cb.fp(buf, input_cb.arg);
+  if (!errno)
+    input_cb.fp(buf, input_cb.arg);
 
-  /* Atomically broadcasting the event source and terminating the thread,
-     there is not a chSysUnlock() because the thread terminates upon return.*/
-  chSysLock();
-  chEvtBroadcastI(&io_terminated);
-  chThdExitS(RDY_OK);
-
-  /* Never executed, silencing a warning.*/
-  return 0;
+  close((int)fd);
 }
 
 void sim_printf(char *fmt, ...) {
   va_list ap;
-
-  if (!output_stream)
-    return;
+  char buf[SIM_OUTPUT_MAX], *bufp = buf;
+  int nb, left;
+  sigset_t sigpipe_mask;
 
   va_start(ap, fmt);
-  chvprintf(output_stream, fmt, ap);
+  (void)vprintf(fmt, ap);
   va_end(ap);
-}
 
-/**
- * @brief SD1 status change handler.
- *
- * @param[in] id event id.
- */
-static void sd1_handler(eventid_t id) {
-  flagsmask_t flags;
+  if (!ofd)
+    return;
 
-  (void)id;
-  flags = chEvtGetAndClearFlags(&sd1fel);
-  if ((flags & CHN_CONNECTED) && (itp == NULL)) {
-    itp = chThdCreateFromHeap(NULL, THD_WA_SIZE(THD_SIZE), NORMALPRIO + 10, input_handler, (void *)&SD1);
+  sigemptyset(&sigpipe_mask);
+  sigaddset(&sigpipe_mask, SIGPIPE);
+  if (pthread_sigmask(SIG_BLOCK, &sigpipe_mask, NULL) == -1) {
+    printf("ERROR simio pthread_sigmask()\n");
+    exit(1);
   }
-  if (flags & CHN_DISCONNECTED) {
-    chSysLock();
-    chIQResetI(&SD1.iqueue);
-    chSysUnlock();
-  }
-}
 
-/**
- * @brief SD1 status change handler.
- *
- * @param[in] id event id.
- */
-static void sd2_handler(eventid_t id) {
-  flagsmask_t flags;
+  va_start(ap, fmt);
+  left = vsnprintf(buf, sizeof buf, fmt, ap);
+  va_end(ap);
 
-  (void)id;
-  flags = chEvtGetAndClearFlags(&sd2fel);
-  if ((flags & CHN_CONNECTED) && (otp == NULL)) {
-    output_stream = (BaseSequentialStream*)&SD2;
-  }
-  if (flags & CHN_DISCONNECTED) {
-    output_stream = NULL;
-    chSysLock();
-    chIQResetI(&SD2.iqueue);
-    chSysUnlock();
+  while (left) {
+    if ((nb = write(ofd, bufp, left)) <= 0) {
+      fprintf(stderr, "ERROR simio write() fd %d %s\n", ofd, strerror(errno));
+      ofd = 0;
+      break;
+    }
+    left -= nb;
+    bufp += nb;
   }
 }
 
-/**
- * @brief IO termination handler.
- *
- * @param[in] id event id.
- */
-static void termination_handler(eventid_t id) {
-  (void)id;
-  if (itp && chThdTerminated(itp)) {
-    chThdWait(itp);
-    itp = NULL;
-    chThdSleepMilliseconds(10);
-    chSysLock();
-    chOQResetI(&SD1.oqueue);
-    chSysUnlock();
+static void* accept_thread(void *port) {
+  SOCKET sock = init_sock((SOCKET)port);
+  struct sockaddr_in addr;
+  socklen_t addrlen = sizeof(addr);
+  int fd;
+
+  while (TRUE) {
+    if ((fd = accept(sock, (struct sockaddr*)&addr, &addrlen)) == INVALID_SOCKET) {
+      printf("ERROR simio accept() %s\n", strerror(errno));
+      if (!(errno == ECONNABORTED || errno == EINTR))
+          exit(EXIT_FAILURE);
+    } else {
+      if (pthread_self() == itp) {
+        input_handler(fd);
+      } else {
+        ofd = fd;
+      }
+    }
   }
 
-  if (otp && chThdTerminated(otp)) {
-    chThdWait(otp);
-    otp = NULL;
-    chThdSleepMilliseconds(10);
-    chSysLock();
-    chOQResetI(&SD2.oqueue);
-    chSysUnlock();
-  }
 }
 
-static evhandler_t fhandlers[] = {
-  termination_handler,
-  sd1_handler,
-  sd2_handler
-};
-
-static msg_t event_thread(void *arg) {
-  (void)arg;
-  EventListener tel;
-
-  chEvtInit(&io_terminated);
-  chEvtRegister(&io_terminated, &tel, 0);
-
-  chEvtRegister(chnGetEventSource(&SD1), &sd1fel, 1);
-  chEvtRegister(chnGetEventSource(&SD2), &sd2fel, 2);
-
-  /*
-   * Events servicing loop.
-   */
-  while (!chThdShouldTerminate())
-    chEvtDispatch(fhandlers, chEvtWaitOne(ALL_EVENTS));
-
-  /*
-   * Clean simulator exit.
-   */
-  chEvtUnregister(chnGetEventSource(&SD1), &sd1fel);
-  chEvtUnregister(chnGetEventSource(&SD2), &sd2fel);
-
-  return 0;
-}
-
-void sim_input_cb(simio_cb_t cb, void *arg) {
+void sim_set_input_cb(simio_cb_t cb, void *arg) {
   input_cb.fp = cb;
   input_cb.arg = arg;
 }
 
-void sim_io_start() {
-  static WORKING_AREA(wsp, THD_SIZE);
-  chSchWakeupS(etp = chThdCreateI(wsp, sizeof wsp, NORMALPRIO, event_thread, NULL), RDY_OK);
+void sim_io_start(int portin, int portout) {
+  int err;
+  if (!itp && portin)
+    if ((err = pthread_create(&itp, NULL, accept_thread, (void*)portin))) {
+      printf("ERROR simio pthread_create() %s\n", strerror(err));
+      exit(EXIT_FAILURE);
+    }
+
+  if (!otp && portout)
+    if ((err = pthread_create(&otp, NULL, accept_thread, (void*)portout))) {
+      printf("ERROR simio pthread_create() %s\n", strerror(err));
+      exit(EXIT_FAILURE);
+    }
 }
 
 void sim_io_stop() {
-  etp->p_flags |= THD_TERMINATE;
 }
 
-void sim_getopt(int argc, char **argv) {
-  int opt;
+// void sim_getopt(int argc, char **argv) {
+//   int opt, sd1_port, sd2_port;
 
-  while ((opt = getopt(argc, argv, "i:o:")) != -1) {
-    switch (opt) {
-      case 'i':
-        sdcfg.sd1_port = atoi(optarg);
-        break;
-      case 'o':
-        sdcfg.sd2_port = atoi(optarg);
-        break;
-      default:
-        fprintf(stderr, "Usage: %s [-t nsecs] [-n] name\n",
-                        argv[0]);
-        exit(EXIT_FAILURE);
-    }
-  }
-  /* reset getopt */
-  optind = 1;
-}
-
-/*
- * Activates the serial driver for network IO.
- */
-void sim_sdStart() {
-  sdStart(&SD1, &sdcfg);
-  sdStart(&SD2, &sdcfg);
-}
-
-void sim_sdStop() {
-  sdStop(&SD1);
-  sdStop(&SD2);
-}
+//   while ((opt = getopt(argc, argv, "i:o:")) != -1) {
+//     switch (opt) {
+//       case 'i':
+//         sd1_port = atoi(optarg);
+//         break;
+//       case 'o':
+//         sd2_port = atoi(optarg);
+//         break;
+//       default:
+//         fprintf(stderr, "Usage: %s [-t nsecs] [-n] name\n",
+//                         argv[0]);
+//         exit(EXIT_FAILURE);
+//     }
+//   }
+//   /* reset getopt */
+//   optind = 1;
+// }

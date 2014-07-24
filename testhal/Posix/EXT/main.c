@@ -20,6 +20,7 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "simio.h"
 
 /*===========================================================================*/
 /* Driver exported variables.                                                */
@@ -45,6 +46,13 @@ static void extcb1(EXTDriver *extp, expchannel_t channel) {
   (void)channel;
 
   palSetPad(IOPORT1, 0);
+
+  chSysLockFromIsr();
+  if (chVTIsArmedI(&vt4))
+    chVTResetI(&vt4);
+  /* LED4 set to OFF after 200mS.*/
+  chVTSetI(&vt4, MS2ST(200), led4off, NULL);
+  chSysUnlockFromIsr();
 }
 
 static const EXTConfig extcfg = {
@@ -73,16 +81,16 @@ static const EXTConfig extcfg = {
 };
 
 void argParse(int argc, char **argv) {
-  SerialConfig sdcfg = {0, 0};
-  int opt;
+  int portin = 0, portout = 0, opt;
 
+  optind = 1;
   while ((opt = getopt(argc, argv, "i:o:")) != -1) {
     switch (opt) {
       case 'i':
-        sdcfg.sd1_port = atoi(optarg);
+        portin = atoi(optarg);
         break;
       case 'o':
-        sdcfg.sd2_port = atoi(optarg);
+        portout = atoi(optarg);
         break;
       default:
         fprintf(stderr, "Usage: %s [-t nsecs] [-n] name\n",
@@ -92,10 +100,9 @@ void argParse(int argc, char **argv) {
     }
 
   /*
-   * Activates the serial driver for network IO.
+   * Activates network IO.
    */
-  sdStart(&SD1, &sdcfg);
-  sdStart(&SD2, &sdcfg);
+  sim_io_start(portin, portout);
 }
 
 /*

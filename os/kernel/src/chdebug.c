@@ -56,6 +56,7 @@
  */
 
 #include "ch.h"
+#include "stdio.h"
 
 /*===========================================================================*/
 /* System state checker related code and variables.                          */
@@ -80,8 +81,10 @@ cnt_t dbg_lock_cnt;
  */
 void dbg_check_disable(void) {
 
-  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt != 0))
+  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt != 0)) {
+    printf("dbg_isr_cnt %d dbg_lock_cnt %d\n", dbg_isr_cnt, dbg_lock_cnt);
     chDbgPanic("SV#1");
+  }
 }
 
 /**
@@ -91,8 +94,10 @@ void dbg_check_disable(void) {
  */
 void dbg_check_suspend(void) {
 
-  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt != 0))
+  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt != 0)) {
+    printf("dbg_isr_cnt %d dbg_lock_cnt %d\n", dbg_isr_cnt, dbg_lock_cnt);
     chDbgPanic("SV#2");
+  }
 }
 
 /**
@@ -102,8 +107,10 @@ void dbg_check_suspend(void) {
  */
 void dbg_check_enable(void) {
 
-  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt != 0))
+  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt != 0)) {
+    printf("dbg_isr_cnt %d dbg_lock_cnt %d\n", dbg_isr_cnt, dbg_lock_cnt);
     chDbgPanic("SV#3");
+  }
 }
 
 /**
@@ -113,8 +120,10 @@ void dbg_check_enable(void) {
  */
 void dbg_check_lock(void) {
 
-  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt != 0))
+  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt != 0)) {
+    printf("dbg_isr_cnt %d dbg_lock_cnt %d\n", dbg_isr_cnt, dbg_lock_cnt);
     chDbgPanic("SV#4");
+  }
   dbg_enter_lock();
 }
 
@@ -125,8 +134,10 @@ void dbg_check_lock(void) {
  */
 void dbg_check_unlock(void) {
 
-  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt <= 0))
+  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt <= 0)) {
+    printf("dbg_isr_cnt %d dbg_lock_cnt %d\n", dbg_isr_cnt, dbg_lock_cnt);
     chDbgPanic("SV#5");
+  }
   dbg_leave_lock();
 }
 
@@ -137,8 +148,10 @@ void dbg_check_unlock(void) {
  */
 void dbg_check_lock_from_isr(void) {
 
-  if ((dbg_isr_cnt <= 0) || (dbg_lock_cnt != 0))
+  if ((dbg_isr_cnt <= 0) || (dbg_lock_cnt != 0)) {
+    printf("dbg_isr_cnt %d dbg_lock_cnt %d\n", dbg_isr_cnt, dbg_lock_cnt);
     chDbgPanic("SV#6");
+  }
   dbg_enter_lock();
 }
 
@@ -149,8 +162,10 @@ void dbg_check_lock_from_isr(void) {
  */
 void dbg_check_unlock_from_isr(void) {
 
-  if ((dbg_isr_cnt <= 0) || (dbg_lock_cnt <= 0))
+  if ((dbg_isr_cnt <= 0) || (dbg_lock_cnt <= 0)) {
+    printf("dbg_isr_cnt %d dbg_lock_cnt %d\n", dbg_isr_cnt, dbg_lock_cnt);
     chDbgPanic("SV#7");
+  }
   dbg_leave_lock();
 }
 
@@ -162,8 +177,10 @@ void dbg_check_unlock_from_isr(void) {
 void dbg_check_enter_isr(void) {
 
   port_lock_from_isr();
-  if ((dbg_isr_cnt < 0) || (dbg_lock_cnt != 0))
+  if ((dbg_isr_cnt < 0) || (dbg_lock_cnt != 0)) {
+    printf("dbg_isr_cnt %d dbg_lock_cnt %d\n", dbg_isr_cnt, dbg_lock_cnt);
     chDbgPanic("SV#8");
+  }
   dbg_isr_cnt++;
   port_unlock_from_isr();
 }
@@ -176,8 +193,10 @@ void dbg_check_enter_isr(void) {
 void dbg_check_leave_isr(void) {
 
   port_lock_from_isr();
-  if ((dbg_isr_cnt <= 0) || (dbg_lock_cnt != 0))
+  if ((dbg_isr_cnt <= 0) || (dbg_lock_cnt != 0)) {
+    printf("dbg_isr_cnt %d dbg_lock_cnt %d\n", dbg_isr_cnt, dbg_lock_cnt);
     chDbgPanic("SV#9");
+  }
   dbg_isr_cnt--;
   port_unlock_from_isr();
 }
@@ -192,8 +211,10 @@ void dbg_check_leave_isr(void) {
  */
 void chDbgCheckClassI(void) {
 
-  if ((dbg_isr_cnt < 0) || (dbg_lock_cnt <= 0))
+  if ((dbg_isr_cnt < 0) || (dbg_lock_cnt <= 0)) {
+    printf("dbg_isr_cnt %d dbg_lock_cnt %d\n", dbg_isr_cnt, dbg_lock_cnt);
     chDbgPanic("SV#10");
+  }
 }
 
 /**
@@ -206,8 +227,10 @@ void chDbgCheckClassI(void) {
  */
 void chDbgCheckClassS(void) {
 
-  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt <= 0))
+  if ((dbg_isr_cnt != 0) || (dbg_lock_cnt <= 0)) {
+    printf("dbg_isr_cnt %d dbg_lock_cnt %d\n", dbg_isr_cnt, dbg_lock_cnt);
     chDbgPanic("SV#11");
+  }
 }
 
 #endif /* CH_DBG_SYSTEM_STATE_CHECK */
@@ -269,8 +292,8 @@ const char *dbg_panic_msg;
  * @param[in] msg       the pointer to the panic message string
  */
 void chDbgPanic(const char *msg) {
-
   dbg_panic_msg = msg;
+  printf("dbg_panic_msg %s\n", dbg_panic_msg);
   chSysHalt();
 }
 #endif /* CH_DBG_ENABLED */

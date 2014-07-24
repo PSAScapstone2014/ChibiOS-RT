@@ -72,16 +72,6 @@ void hal_lld_init(void) {
 void ChkIntSources(void) {
   struct timeval tv;
 
-#if HAL_USE_SERIAL
-  if (sd_lld_interrupt_pending()) {
-    dbg_check_lock();
-    if (chSchIsPreemptionRequired())
-      chSchDoReschedule();
-    dbg_check_unlock();
-    return;
-  }
-#endif
-
   gettimeofday(&tv, NULL);
   if (timercmp(&tv, &nextcnt, >=)) {
     timeradd(&nextcnt, &tick, &nextcnt);
@@ -93,11 +83,6 @@ void ChkIntSources(void) {
     chSysUnlockFromIsr();
 
     CH_IRQ_EPILOGUE();
-
-    dbg_check_lock();
-    if (chSchIsPreemptionRequired())
-      chSchDoReschedule();
-    dbg_check_unlock();
   }
 }
 

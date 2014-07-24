@@ -43,11 +43,6 @@
 #endif
 
 /**
- * Always use serial for simulated network IO.
- */
-#define HAL_USE_SERIAL              TRUE
-
-/**
  * Macro defining the a simulated architecture into x86.
  */
 #define CH_ARCHITECTURE_SIMSTM32
@@ -208,24 +203,24 @@ struct context {
 #define port_init()
 
 /**
- * Does nothing in this simulator.
+ * Locks system mutex.
  */
-#define port_lock() asm volatile("nop")
+#define port_lock() _port_lock()
 
 /**
- * Does nothing in this simulator.
+ * Unlocks system mutex.
  */
-#define port_unlock() asm volatile("nop")
+#define port_unlock() _port_unlock()
 
 /**
- * Does nothing in this simulator.
+ * Locks isr mutex.
  */
-#define port_lock_from_isr()
+#define port_lock_from_isr() _port_lock_from_isr()
 
 /**
- * Does nothing in this simulator.
+ * Unlocks isr mutex.
  */
-#define port_unlock_from_isr()
+#define port_unlock_from_isr() _port_unlock_from_isr()
 
 /**
  * Does nothing in this simulator.
@@ -251,6 +246,11 @@ struct context {
 #ifdef __cplusplus
 extern "C" {
 #endif
+  void _port_lock(void);
+  void _port_unlock(void);
+  void _port_lock_from_isr(void);
+  void _port_unlock_from_isr(void);
+
   __attribute__((fastcall)) void port_switch(Thread *ntp, Thread *otp);
   __attribute__((fastcall)) void port_halt(void);
   __attribute__((cdecl, noreturn)) void _port_thread_start(msg_t (*pf)(void *),
