@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
-#include <signal.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -22,9 +21,13 @@ struct {
   void*       arg;
 } input_cb;
 
+pthread_mutex_t simio_lock = PTHREAD_MUTEX_INITIALIZER;
+
+/* forward function declarations */
 SOCKET sock_init(void);
 void sock_listen(SOCKET sock, long port);
 void* accept_thread(void *port);
+
 
 void sim_accept_input(long port) {
   int err;
@@ -43,6 +46,12 @@ void sim_accept_input(long port) {
 
 void sim_connect_output(char *host, uint16_t port) {
   struct sockaddr_in addr;
+
+  /* ignore repeated calls */
+  if (fdout) {
+    fprintf(stderr, "ERROR simio already connected\n");
+    return;
+  }
 
   /* build addr struct */
   addr.sin_family = AF_INET;
@@ -93,37 +102,28 @@ void handle_input(int fd) {
   /* always add null terminator */
   buf[i] = '\0';
 
-  if (!errno)
-    input_cb.fp(buf, input_cb.arg);
-  else
+  if (errno) {
     fprintf(stderr, "ERROR simio read %s\n", strerror(errno));
+  } else {
+    sim_io_lock();
+    input_cb.fp(buf, input_cb.arg);
+    sim_io_unlock();
+  }
 
   close(fd);
 }
 
 void sim_printf(char *fmt, ...) {
   char buf[SIM_OUTPUT_MAX], *bufp = buf;
-  int err, nb, left;
-  sigset_t sigpipe_mask;
+  int nb, left;
   va_list ap;
 
-#ifndef DELETEME /* ToDo */
-  va_start(ap, fmt);
-  (void)vprintf(fmt, ap);
-  va_end(ap);
-#endif /* DELETEME */
-
-  sigemptyset(&sigpipe_mask);
-  sigaddset(&sigpipe_mask, SIGPIPE);
-  if ((err = pthread_sigmask(SIG_BLOCK, &sigpipe_mask, NULL))) {
-    fprintf(stderr, "ERROR simio pthread_sigmask %s\n", strerror(err));
-    exit(EXIT_FAILURE);
-  }
-
+  /* fill buffer */
   va_start(ap, fmt);
   left = vsnprintf(buf, sizeof buf, fmt, ap);
   va_end(ap);
 
+  /* write to socket */
   while (left) {
     if ((nb = write(fdout, bufp, left)) <= 0) {
       fprintf(stderr, "ERROR simio write %s\n", strerror(errno));
@@ -210,4 +210,12 @@ void sock_listen(SOCKET sock, long port) {
     fprintf(stderr, "ERROR simio listen()\n");
     exit(EXIT_FAILURE);
   }
+}
+
+void sim_io_lock(void) {
+  pthread_mutex_lock(&simio_lock);
+}
+
+void sim_io_unlock(void) {
+  pthread_mutex_unlock(&simio_lock);
 }

@@ -16,4 +16,7 @@ void sim_io_stop(void);
 
 void sim_getopt(int argc, char **argv);
 
+void sim_io_lock(void);
+void sim_io_unlock(void);
+
 #endif /* SIMIO_H */

@@ -34,10 +34,6 @@
 
 #include "ch.h"
 #include "hal.h"
-#include <pthread.h>
-
-pthread_mutex_t sys_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t isr_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * @brief   Kernel-lock action.
@@ -45,7 +41,6 @@ pthread_mutex_t isr_lock = PTHREAD_MUTEX_INITIALIZER;
  *          actions.
  */
 void _port_lock(void) {
-  pthread_mutex_lock(&sys_lock);
 }
 
 /**
@@ -54,7 +49,6 @@ void _port_lock(void) {
  *          actions.
  */
 void _port_unlock(void) {
-  pthread_mutex_unlock(&sys_lock);
 }
 
 /**
@@ -64,7 +58,6 @@ void _port_unlock(void) {
  *          in its simplest form it is void.
  */
 void _port_lock_from_isr(void) {
-  pthread_mutex_lock(&isr_lock);
 }
 
 /**
@@ -74,7 +67,6 @@ void _port_lock_from_isr(void) {
  *          simplest form it is void.
  */
 void _port_unlock_from_isr(void) {
-  pthread_mutex_unlock(&isr_lock);
 }
 
 /**

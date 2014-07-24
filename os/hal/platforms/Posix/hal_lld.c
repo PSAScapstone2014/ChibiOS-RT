@@ -28,6 +28,7 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "simio.h"
 
 /*===========================================================================*/
 /* Driver exported variables.                                                */
@@ -76,6 +77,8 @@ void ChkIntSources(void) {
   if (timercmp(&tv, &nextcnt, >=)) {
     timeradd(&nextcnt, &tick, &nextcnt);
 
+    sim_io_lock();
+
     CH_IRQ_PROLOGUE();
 
     chSysLockFromIsr();
@@ -83,7 +86,17 @@ void ChkIntSources(void) {
     chSysUnlockFromIsr();
 
     CH_IRQ_EPILOGUE();
+
+    dbg_check_lock();
+    if (chSchIsPreemptionRequired()) {
+      sim_io_unlock();
+      chSchDoReschedule();
+    }
+    dbg_check_unlock();
+
+    sim_io_unlock();
   }
+
 }
 
 /** @} */
