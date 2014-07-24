@@ -6,16 +6,14 @@
 
 typedef void (*simio_cb_t)(char*, void*);
 
-void sim_io_start(int portin, int portout);
-void sim_io_stop(void);
-
-void sim_getopt(int argc, char **argv);
-void sim_sdStart(void);
-void sim_sdStop(void);
+void sim_accept_input(long port);
+void sim_connect_output(char *host, uint16_t port);
 
 void sim_set_input_cb(simio_cb_t cb, void *arg);
 void sim_printf(char *fmt, ...);
 
-int simio_interrupt_pending(void);
+void sim_io_stop(void);
+
+void sim_getopt(int argc, char **argv);
 
 #endif /* SIMIO_H */

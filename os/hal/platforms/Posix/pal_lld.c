@@ -25,7 +25,6 @@
 #include "ch.h"
 #include "hal.h"
 #include "simio.h"
-#include "chprintf.h"
 
 #if HAL_USE_PAL || defined(__DOXYGEN__)
 
@@ -80,6 +79,14 @@ char* port_lookup(ioportid_t port) {
 /*===========================================================================*/
 /* Driver exported functions.                                                */
 /*===========================================================================*/
+
+void _pal_lld_init(const PALConfig *config) {
+  sim_connect_output("127.0.0.1", 28000);
+  vio_port_1 = (config)->VP1Data;
+  vio_port_2 = (config)->VP2Data;
+  vio_port_3 = (config)->VP3Data;
+  vio_port_4 = (config)->VP4Data;
+}
 
 /**
  * @brief   Writes a bits mask on a I/O port.

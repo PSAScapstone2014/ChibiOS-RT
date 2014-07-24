@@ -10,79 +10,81 @@
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
-#define THD_SIZE 256
+pthread_t atp;
+SOCKET fdout;
 
-static pthread_t itp;
-static pthread_t otp;
-static int ofd;
-
-static struct {
+struct {
   simio_cb_t  fp;
   void*       arg;
 } input_cb;
 
-static SOCKET init_sock(uint16_t port) {
-  struct sockaddr_in sad;
-  struct protoent *prtp;
-  SOCKET sock = INVALID_SOCKET, sockval = 1;
-  socklen_t socklen = sizeof(sockval);
+SOCKET sock_init(void);
+void sock_listen(SOCKET sock, long port);
+void* accept_thread(void *port);
 
+void sim_accept_input(long port) {
+  int err;
 
-  if ((prtp = getprotobyname("tcp")) == NULL) {
-    printf("ERROR in simio getprotobyname()\n");
-    goto abort;
+  /* ignore repeated calls */
+  if (atp) {
+    fprintf(stderr, "ERROR simio already accepting connections\n");
+    return;
   }
 
-  sock = socket(PF_INET, SOCK_STREAM, prtp->p_proto);
-  if (sock == INVALID_SOCKET) {
-    printf("ERROR in simio socket()\n");
-    goto abort;
+  if ((err = pthread_create(&atp, NULL, accept_thread, (void*)port))) {
+    fprintf(stderr, "ERROR simio pthread_create() %s\n", strerror(err));
+    exit(EXIT_FAILURE);
+  }
+}
+
+void sim_connect_output(char *host, uint16_t port) {
+  struct sockaddr_in addr;
+
+  /* build addr struct */
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(port);
+  if (!inet_aton(host, &addr.sin_addr)) {
+    fprintf(stderr, "ERROR simio invalid host %s\n", host);
+    exit(EXIT_FAILURE);
   }
 
-  setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &sockval, socklen);
-
-  memset(&sad, 0, sizeof(sad));
-  sad.sin_family = AF_INET;
-  sad.sin_addr.s_addr = INADDR_ANY;
-  sad.sin_port = htons(port);
-  if (bind(sock, (struct sockaddr *)&sad, sizeof(sad))) {
-    printf("ERROR in simio bind()\n");
-    goto abort;
+  /* create socket and connect to remote */
+  fdout = sock_init();
+  if (connect(fdout, (struct sockaddr*)&addr, sizeof addr)) {
+    fprintf(stderr, "ERROR simio connect %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
   }
+}
 
-  if (listen(sock, 1) != 0) {
-    printf("ERROR simio listen()\n");
-    goto abort;
-  }
+void sim_set_input_cb(simio_cb_t cb, void *arg) {
+  input_cb.fp = cb;
+  input_cb.arg = arg;
+}
 
-  printf("simio listening on port %d\n", port);
-  return sock;
-
-abort:
-  if (sock != INVALID_SOCKET)
-    close(sock);
-  exit(EXIT_FAILURE);
+void sim_io_stop() {
 }
 
 /**
- * @brief   Reads a text line from input and sends it to the registered callback.
+ * @brief   Reads up to SIM_INPUT_MAX - 1 bytes from input and delivers the
+ *          buffer to the registered callback.
  *
- * @param[in] p         pointer to a @p BaseSequentialStream object
- * @return              Termination reason.
- * @retval RDY_OK       terminated by command.
- * @retval RDY_RESET    terminated by reset condition on the I/O channel.
+ * @param[in] p         socket file descriptor
  *
  * @notapi
  */
-static void input_handler(int fd) {
+void handle_input(int fd) {
   char buf[SIM_INPUT_MAX];
   uint32_t i;
 
+  /* fill buffer sans terminating null char */
   for (i = 0; i < sizeof(buf) - 1; i++) {
     uint8_t c;
 
-    if (read((int)fd, &c, 1) <= 0)
+    if (read(fd, &c, 1) <= 0)
       break;
 
     buf[i] = c;
@@ -93,28 +95,29 @@ static void input_handler(int fd) {
 
   if (!errno)
     input_cb.fp(buf, input_cb.arg);
+  else
+    fprintf(stderr, "ERROR simio read %s\n", strerror(errno));
 
-  close((int)fd);
+  close(fd);
 }
 
 void sim_printf(char *fmt, ...) {
-  va_list ap;
   char buf[SIM_OUTPUT_MAX], *bufp = buf;
-  int nb, left;
+  int err, nb, left;
   sigset_t sigpipe_mask;
+  va_list ap;
 
+#ifndef DELETEME /* ToDo */
   va_start(ap, fmt);
   (void)vprintf(fmt, ap);
   va_end(ap);
-
-  if (!ofd)
-    return;
+#endif /* DELETEME */
 
   sigemptyset(&sigpipe_mask);
   sigaddset(&sigpipe_mask, SIGPIPE);
-  if (pthread_sigmask(SIG_BLOCK, &sigpipe_mask, NULL) == -1) {
-    printf("ERROR simio pthread_sigmask()\n");
-    exit(1);
+  if ((err = pthread_sigmask(SIG_BLOCK, &sigpipe_mask, NULL))) {
+    fprintf(stderr, "ERROR simio pthread_sigmask %s\n", strerror(err));
+    exit(EXIT_FAILURE);
   }
 
   va_start(ap, fmt);
@@ -122,59 +125,31 @@ void sim_printf(char *fmt, ...) {
   va_end(ap);
 
   while (left) {
-    if ((nb = write(ofd, bufp, left)) <= 0) {
-      fprintf(stderr, "ERROR simio write() fd %d %s\n", ofd, strerror(errno));
-      ofd = 0;
-      break;
+    if ((nb = write(fdout, bufp, left)) <= 0) {
+      fprintf(stderr, "ERROR simio write %s\n", strerror(errno));
+      exit(EXIT_FAILURE);
     }
     left -= nb;
     bufp += nb;
   }
 }
 
-static void* accept_thread(void *port) {
-  SOCKET sock = init_sock((SOCKET)port);
-  struct sockaddr_in addr;
-  socklen_t addrlen = sizeof(addr);
+void* accept_thread(void *port) {
+  SOCKET sock = sock_init();
   int fd;
 
+  sock_listen(sock, (long)port);
+  printf("simio listening on port %ld\n", (long)port);
+
   while (TRUE) {
-    if ((fd = accept(sock, (struct sockaddr*)&addr, &addrlen)) == INVALID_SOCKET) {
-      printf("ERROR simio accept() %s\n", strerror(errno));
+    if ((fd = accept(sock, NULL, NULL)) == INVALID_SOCKET) {
+      fprintf(stderr, "ERROR simio accept() %s\n", strerror(errno));
       if (!(errno == ECONNABORTED || errno == EINTR))
           exit(EXIT_FAILURE);
     } else {
-      if (pthread_self() == itp) {
-        input_handler(fd);
-      } else {
-        ofd = fd;
-      }
+      handle_input(fd);
     }
   }
-
-}
-
-void sim_set_input_cb(simio_cb_t cb, void *arg) {
-  input_cb.fp = cb;
-  input_cb.arg = arg;
-}
-
-void sim_io_start(int portin, int portout) {
-  int err;
-  if (!itp && portin)
-    if ((err = pthread_create(&itp, NULL, accept_thread, (void*)portin))) {
-      printf("ERROR simio pthread_create() %s\n", strerror(err));
-      exit(EXIT_FAILURE);
-    }
-
-  if (!otp && portout)
-    if ((err = pthread_create(&otp, NULL, accept_thread, (void*)portout))) {
-      printf("ERROR simio pthread_create() %s\n", strerror(err));
-      exit(EXIT_FAILURE);
-    }
-}
-
-void sim_io_stop() {
 }
 
 // void sim_getopt(int argc, char **argv) {
@@ -197,3 +172,42 @@ void sim_io_stop() {
 //   /* reset getopt */
 //   optind = 1;
 // }
+
+SOCKET sock_init() {
+  struct protoent *prtp;
+  SOCKET sock = INVALID_SOCKET;
+
+  if ((prtp = getprotobyname("tcp")) == NULL) {
+    fprintf(stderr, "ERROR simio getprotobyname()\n");
+    exit(EXIT_FAILURE);
+  }
+
+  sock = socket(PF_INET, SOCK_STREAM, prtp->p_proto);
+  if (sock == INVALID_SOCKET) {
+    fprintf(stderr, "ERROR simio socket()\n");
+    exit(EXIT_FAILURE);
+  }
+  return sock;
+}
+
+void sock_listen(SOCKET sock, long port) {
+  struct sockaddr_in sad;
+  int sockval = 1;
+  socklen_t socklen = sizeof(sockval);
+
+  setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &sockval, socklen);
+
+  memset(&sad, 0, sizeof(sad));
+  sad.sin_family = AF_INET;
+  sad.sin_addr.s_addr = INADDR_ANY;
+  sad.sin_port = htons(port);
+  if (bind(sock, (struct sockaddr *)&sad, sizeof(sad))) {
+    fprintf(stderr, "ERROR simio bind()\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (listen(sock, 1) != 0) {
+    fprintf(stderr, "ERROR simio listen()\n");
+    exit(EXIT_FAILURE);
+  }
+}

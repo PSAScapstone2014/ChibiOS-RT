@@ -20,7 +20,6 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "simio.h"
 
 /*===========================================================================*/
 /* Driver exported variables.                                                */
@@ -80,35 +79,10 @@ static const EXTConfig extcfg = {
   }
 };
 
-void argParse(int argc, char **argv) {
-  int portin = 0, portout = 0, opt;
-
-  optind = 1;
-  while ((opt = getopt(argc, argv, "i:o:")) != -1) {
-    switch (opt) {
-      case 'i':
-        portin = atoi(optarg);
-        break;
-      case 'o':
-        portout = atoi(optarg);
-        break;
-      default:
-        fprintf(stderr, "Usage: %s [-t nsecs] [-n] name\n",
-                        argv[0]);
-        exit(EXIT_FAILURE);
-      }
-    }
-
-  /*
-   * Activates network IO.
-   */
-  sim_io_start(portin, portout);
-}
-
 /*
  * Application entry point.
  */
-int main(int argc, char **argv) {
+int main(void) {
 
   /*
    * System initializations.
@@ -119,11 +93,6 @@ int main(int argc, char **argv) {
    */
   halInit();
   chSysInit();
-
-  /*
-   * Handle command line
-   */
-  argParse(argc, argv);
 
   /*
    * Activates the EXT driver 1.

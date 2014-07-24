@@ -150,11 +150,7 @@ typedef sim_vio_port_t *ioportid_t;
  *
  * @notapi
  */
-#define pal_lld_init(config)                                                \
-  (vio_port_1 = (config)->VP1Data,                                          \
-   vio_port_2 = (config)->VP2Data,                                          \
-   vio_port_3 = (config)->VP3Data,                                          \
-   vio_port_4 = (config)->VP4Data)
+#define pal_lld_init(config) _pal_lld_init(config)
 
 /**
  * @brief   Reads the physical I/O port states.
@@ -206,6 +202,7 @@ extern const PALConfig pal_default_config;
 #ifdef __cplusplus
 extern "C" {
 #endif
+  void _pal_lld_init(const PALConfig *config);
   void _pal_lld_writeport(ioportid_t port, uint32_t bits);
   void _pal_lld_setgroupmode(ioportid_t port,
                              ioportmask_t mask,

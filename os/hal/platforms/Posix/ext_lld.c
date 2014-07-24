@@ -109,6 +109,7 @@ void ext_lld_start(EXTDriver *extp) {
     /* Enables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
+      sim_accept_input(28001);
       sim_set_input_cb(ext_input_handler, (void*)extp);
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
