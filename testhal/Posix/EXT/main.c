@@ -82,7 +82,8 @@ static const EXTConfig extcfg = {
 /*
  * Application entry point.
  */
-int main(void) {
+int main(int argc, char **argv) {
+  sim_getopt(argc, argv);
 
   /*
    * System initializations.

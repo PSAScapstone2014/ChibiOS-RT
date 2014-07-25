@@ -4,19 +4,29 @@
 #define SIM_INPUT_MAX 80
 #define SIM_OUTPUT_MAX 256
 
-typedef void (*simio_cb_t)(char*, void*);
+/* index to array of IO ports */
+typedef enum {
+  HAL_OUT,
+  HAL_EXT
+} sim_hal_id_t;
 
-void sim_accept_input(long port);
-void sim_connect_output(char *host, uint16_t port);
+typedef void (*simio_cb_t)(char *buf, void *arg);
 
-void sim_set_input_cb(simio_cb_t cb, void *arg);
-void sim_printf(char *fmt, ...);
+/* configure */
+extern void sim_getopt(int argc, char **argv);
 
-void sim_io_stop(void);
+/* startup */
+extern void sim_connect_output(void);
+extern void sim_set_input_cb(sim_hal_id_t hid, simio_cb_t cb, void *arg);
 
-void sim_getopt(int argc, char **argv);
+/* write messages to server */
+extern void sim_printf(char *fmt, ...);
 
-void sim_io_lock(void);
-void sim_io_unlock(void);
+/* shutdown */
+extern void sim_io_stop(void);
+
+/* locks around irqs */
+extern void sim_io_lock(void);
+extern void sim_io_unlock(void);
 
 #endif /* SIMIO_H */
