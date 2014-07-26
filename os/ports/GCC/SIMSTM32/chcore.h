@@ -73,6 +73,11 @@
 #define CH_PORT_INFO                    "No preemption"
 
 /**
+ * @brief   MAC Never used in simulation.
+ */
+#define HAL_USE_MAC                     FALSE
+
+/**
  * 16 bytes stack alignment.
  */
 typedef struct {
