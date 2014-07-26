@@ -53,8 +53,6 @@ SerialDriver SD2;
 
 /** @brief Driver default configuration.*/
 static const SerialConfig default_config = {
-  SIM_SD1_PORT,
-  SIM_SD2_PORT
 };
 
 static u_long nb = 1;
@@ -248,13 +246,13 @@ void sd_lld_start(SerialDriver *sdp, const SerialConfig *config) {
     config = &default_config;
 
 #if USE_SIM_SERIAL1
-  if (sdp == &SD1 && config->sd1_port)
-    init(&SD1, config->sd1_port);
+  if (sdp == &SD1)
+    init(&SD1, SIM_SD1_PORT);
 #endif
 
 #if USE_SIM_SERIAL2
-  if (sdp == &SD2 && config->sd2_port)
-    init(&SD2, config->sd2_port);
+  if (sdp == &SD2)
+    init(&SD2, SIM_SD2_PORT);
 #endif
 }
 
@@ -266,7 +264,8 @@ void sd_lld_start(SerialDriver *sdp, const SerialConfig *config) {
  * @param[in] sdp       pointer to a @p SerialDriver object
  */
 void sd_lld_stop(SerialDriver *sdp) {
-  shutdown(sdp->com_listen, SHUT_RDWR);
+
+  (void)sdp;
 }
 
 bool_t sd_lld_interrupt_pending(void) {

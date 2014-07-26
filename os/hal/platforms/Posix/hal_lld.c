@@ -30,6 +30,11 @@
 #include "hal.h"
 #include "simio.h"
 
+#ifdef CH_DEMO
+# define sim_io_lock()
+# define sim_io_unlock()
+#endif
+
 /*===========================================================================*/
 /* Driver exported variables.                                                */
 /*===========================================================================*/
@@ -72,6 +77,16 @@ void hal_lld_init(void) {
  */
 void ChkIntSources(void) {
   struct timeval tv;
+
+#if CH_DEMO
+  if (sd_lld_interrupt_pending()) {
+    dbg_check_lock();
+    if (chSchIsPreemptionRequired())
+      chSchDoReschedule();
+    dbg_check_unlock();
+    return;
+  }
+#endif
 
   gettimeofday(&tv, NULL);
   if (timercmp(&tv, &nextcnt, >=)) {

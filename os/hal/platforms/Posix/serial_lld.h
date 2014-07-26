@@ -93,8 +93,6 @@
  *          initializers.
  */
 typedef struct {
-  uint32_t sd1_port;
-  uint32_t sd2_port;
 } SerialConfig;
 
 /**

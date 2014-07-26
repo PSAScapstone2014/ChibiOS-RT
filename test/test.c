@@ -228,7 +228,7 @@ void test_cpu_pulse(unsigned duration) {
   end = start + MS2ST(duration);
   do {
     now = chThdSelf()->p_time;
-#if defined(SIMULATOR)
+#if defined(SIMULATOR) || defined(CH_DEMO)
     ChkIntSources();
 #endif
   }
