@@ -5,8 +5,8 @@ PLATFORMSRC = ${CHIBIOS}/os/hal/platforms/Posix/hal_lld.c \
               ${CHIBIOS}/os/hal/platforms/Posix/ext_lld.c \
               ${CHIBIOS}/os/hal/platforms/Posix/spi_lld.c \
               ${CHIBIOS}/os/hal/platforms/Posix/i2c_lld.c \
-              ${CHIBIOS}/os/hal/platforms/Posix/rtc_lld.c
-              ${CHIBIOS}/os/hal/platforms/Posix/gpt_lld.c \^M
+              ${CHIBIOS}/os/hal/platforms/Posix/rtc_lld.c \
+              ${CHIBIOS}/os/hal/platforms/Posix/gpt_lld.c 
 
 
 ifndef CH_DEMO
