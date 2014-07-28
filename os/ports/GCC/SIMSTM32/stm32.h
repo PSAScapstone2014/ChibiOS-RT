@@ -63,6 +63,24 @@
 #define GPIOC_OSC32_IN              14
 #define GPIOC_OSC32_OUT             15
 
+
+/*
+ * GPS_RF_FRONTEND_2 pins
+ */
+#define GPIOD_SD_VDD                  0
+#define GPIOD_PIN1                    1
+#define GPIOD_SD_CMD                  2
+#define GPIOD_EPHY_NRST               3
+#define GPIOD_PIN4                    4
+#define GPIOD_PIN5                    5
+#define GPIOD_PIN6                    6
+#define GPIOD_PIN7                    7
+#define GPIOD_RGB_R                   11
+#define GPIOD_PIN12                   12
+#define GPIOD_RGB_B                   13
+#define GPIOD_RGB_G                   14
+#define GPIOD_PIN15                   15
+
 /**
  * @brief   Managed RAM size.
  * @details Size of the RAM area to be managed by the OS. If set to zero
