@@ -53,17 +53,25 @@ SerialDriver SD2;
 
 /** @brief Driver default configuration.*/
 static const SerialConfig default_config = {
-  SIM_SD1_PORT,
-  SIM_SD2_PORT
 };
 
+typedef enum {
+  IO_INPUT = 0,
+  IO_OUTPUT
+} io_direction;
+
+#ifdef CH_DEMO
 static u_long nb = 1;
+#endif /* CH_DEMO */
 
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 
-static void init(SerialDriver *sdp, uint16_t port) {
+#ifndef CH_DEMO
+# define sd_lld_listen(a, b)
+#else
+static void sd_lld_listen(SerialDriver *sdp, uint16_t port) {
   struct sockaddr_in sad;
   struct protoent *prtp;
   int sockval = 1;
@@ -80,7 +88,6 @@ static void init(SerialDriver *sdp, uint16_t port) {
     printf("%s: Error creating simulator socket\n", sdp->com_name);
     goto abort;
   }
-
 
   setsockopt(sdp->com_listen, SOL_SOCKET, SO_REUSEADDR, &sockval, socklen);
 
@@ -209,6 +216,8 @@ static bool_t outint(SerialDriver *sdp) {
   return FALSE;
 }
 
+#endif /* CH_DEMO */
+
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
@@ -224,17 +233,38 @@ void sd_lld_init(void) {
 
 #if USE_SIM_SERIAL1
   sdObjectInit(&SD1, NULL, NULL);
+  SD1.com_name = "SD1";
+
+#ifdef CH_DEMO
   SD1.com_listen = INVALID_SOCKET;
   SD1.com_data = INVALID_SOCKET;
-  SD1.com_name = "SD1";
-#endif
+#endif /* CH_DEMO */
+
+#endif /* USE_SIM_SERIAL1 */
 
 #if USE_SIM_SERIAL2
   sdObjectInit(&SD2, NULL, NULL);
+  SD2.com_name = "SD2";
+
+#ifdef CH_DEMO
   SD2.com_listen = INVALID_SOCKET;
   SD2.com_data = INVALID_SOCKET;
-  SD2.com_name = "SD2";
-#endif
+#endif /* CH_DEMO */
+
+#endif /* USE_SIM_SERIAL2 */
+}
+
+sim_hal_id_t get_sd_name(SerialDriver *sdp, io_direction out) {
+  sim_hal_id_t hid;
+  if (!strcmp((char*)(sdp->com_name), "SD1"))
+    hid = out ? SD1_OUT : SD1_IN;
+  else if (!strcmp((char*)(sdp->com_name), "SD2"))
+    hid = out ? SD2_OUT : SD2_IN;
+  else {
+    fprintf(stderr, "ERROR _serial_lld_write unknown com_name %s\n", sdp->com_name);
+    exit(EXIT_FAILURE);
+  }
+  return hid;
 }
 
 /**
@@ -247,14 +277,21 @@ void sd_lld_start(SerialDriver *sdp, const SerialConfig *config) {
   if (config == NULL)
     config = &default_config;
 
+#ifndef CH_DEMO
+  sim_accept_input(get_sd_name(sdp, IO_INPUT));
+  sim_connect_output(get_sd_name(sdp, IO_OUTPUT));
+#endif /* CH_DEMO */
+
 #if USE_SIM_SERIAL1
-  if (sdp == &SD1 && config->sd1_port)
-    init(&SD1, config->sd1_port);
+  if (sdp == &SD1) {
+    sd_lld_listen(&SD1, SIM_SD1_PORT);
+  }
 #endif
 
 #if USE_SIM_SERIAL2
-  if (sdp == &SD2 && config->sd2_port)
-    init(&SD2, config->sd2_port);
+  if (sdp == &SD2) {
+    sd_lld_listen(&SD2, SIM_SD2_PORT);
+  }
 #endif
 }
 
@@ -266,12 +303,28 @@ void sd_lld_start(SerialDriver *sdp, const SerialConfig *config) {
  * @param[in] sdp       pointer to a @p SerialDriver object
  */
 void sd_lld_stop(SerialDriver *sdp) {
-  shutdown(sdp->com_listen, SHUT_RDWR);
+
+  (void)sdp;
 }
 
-bool_t sd_lld_interrupt_pending(void) {
-  bool_t b;
+#ifndef CH_DEMO
 
+size_t _serial_lld_write(SerialDriver *sdp, uint8_t *b, size_t n) {
+  sim_hal_id_t hid = get_sd_name(sdp, TRUE);
+  return sim_write(hid, b, n);
+}
+
+size_t _serial_lld_read(SerialDriver *sdp, uint8_t *b, size_t n) {
+  sim_hal_id_t hid = get_sd_name(sdp, FALSE);
+  return sim_read(hid, b, n);
+}
+
+#endif /* CH_DEMO */
+
+bool_t sd_lld_interrupt_pending(void) {
+  bool_t b = FALSE;
+
+#ifdef CH_DEMO
   CH_IRQ_PROLOGUE();
 
   b =  connint(&SD1) || connint(&SD2) ||
@@ -279,6 +332,7 @@ bool_t sd_lld_interrupt_pending(void) {
        outint(&SD1)  || outint(&SD2);
 
   CH_IRQ_EPILOGUE();
+#endif /* CH_DEMO */
 
   return b;
 }

@@ -20,6 +20,7 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "simio.h"
 
 /*===========================================================================*/
 /* Driver exported variables.                                                */

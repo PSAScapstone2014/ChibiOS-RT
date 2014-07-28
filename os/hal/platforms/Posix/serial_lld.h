@@ -26,6 +26,7 @@
 #define _SERIAL_LLD_H_
 
 #if HAL_USE_SERIAL || defined(__DOXYGEN__)
+#include "simio.h"
 
 /*===========================================================================*/
 /* Driver constants.                                                         */
@@ -93,9 +94,17 @@
  *          initializers.
  */
 typedef struct {
-  uint32_t sd1_port;
-  uint32_t sd2_port;
 } SerialConfig;
+
+#ifndef CH_DEMO
+# define _serial_driver_network_data
+#else
+# define _serial_driver_network_data                                        \
+  /* Listen socket for simulated serial port.*/                             \
+  SOCKET                    com_listen;                                     \
+  /* Data socket for simulated serial port.*/                               \
+  SOCKET                    com_data;
+#endif /* CH_DEMO */
 
 /**
  * @brief   @p SerialDriver specific data.
@@ -113,12 +122,10 @@ typedef struct {
   /* Output circular buffer.*/                                              \
   uint8_t                   ob[SERIAL_BUFFERS_SIZE];                        \
   /* End of the mandatory fields.*/                                         \
-  /* Listen socket for simulated serial port.*/                             \
-  SOCKET                    com_listen;                                     \
-  /* Data socket for simulated serial port.*/                               \
-  SOCKET                    com_data;                                       \
   /* Port readable name.*/                                                  \
-  const char                *com_name;
+  const char                *com_name;                                      \
+  _serial_driver_network_data
+
 
 /*===========================================================================*/
 /* Driver macros.                                                            */
@@ -135,12 +142,21 @@ extern SerialDriver SD1;
 extern SerialDriver SD2;
 #endif
 
+#ifndef CH_DEMO
+#define serial_lld_read(sdp, b, n) _serial_lld_read((sdp), (b), n)
+#define serial_lld_write(sdp, b, n) _serial_lld_write((sdp), (b), n)
+#endif /* CH_DEMO */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
   void sd_lld_init(void);
   void sd_lld_start(SerialDriver *sdp, const SerialConfig *config);
   void sd_lld_stop(SerialDriver *sdp);
+
+  size_t _serial_lld_write(SerialDriver *sdp, uint8_t *b, size_t n);
+  size_t _serial_lld_read(SerialDriver *sdp, uint8_t *b, size_t n);
+
   bool_t sd_lld_interrupt_pending(void);
 #ifdef __cplusplus
 }

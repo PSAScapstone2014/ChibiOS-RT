@@ -21,7 +21,7 @@ CC   = $(TRGT)gcc
 AS   = $(TRGT)gcc -x assembler-with-cpp
 
 # List all default C defines here, like -D_DEBUG=1
-DDEFS = -DSIMULATOR -DSHELL_USE_IPRINTF=FALSE
+DDEFS = -DSHELL_USE_IPRINTF=FALSE
 
 # List all default ASM defines here, like -D_DEBUG=1
 DADEFS =
@@ -60,7 +60,7 @@ CHIBIOS = ../../..
 include $(CHIBIOS)/boards/simulator/board.mk
 include ${CHIBIOS}/os/hal/hal.mk
 include ${CHIBIOS}/os/hal/platforms/Posix/platform.mk
-include ${CHIBIOS}/os/ports/GCC/SIMIA32/port.mk
+include ${CHIBIOS}/os/ports/GCC/SIMSTM32/port.mk
 include ${CHIBIOS}/os/kernel/kernel.mk
 include ${CHIBIOS}/test/test.mk
 
@@ -72,7 +72,6 @@ SRC  = ${PORTSRC} \
        ${PLATFORMSRC} \
        $(BOARDSRC) \
        ${CHIBIOS}/os/various/shell.c \
-       ${CHIBIOS}/os/various/memstreams.c \
        ${CHIBIOS}/os/various/chprintf.c \
        main.c \
 	   i2c_pns.c \
@@ -124,8 +123,8 @@ ifeq ($(HOST_OSX),yes)
   LIBS += $(OSX_ARCH)
 else
   # Linux, or other
-  CPFLAGS += -m32 -Wa,-alms=$(<:.c=.lst)
-  LDFLAGS = -m32 -Wl,-Map=$(PROJECT).map,--cref,--no-warn-mismatch $(LIBDIR)
+  CPFLAGS += -m32 -pthread -Wa,-alms=$(<:.c=.lst)
+  LDFLAGS = -m32 -pthread -Wl,-Map=$(PROJECT).map,--cref,--no-warn-mismatch $(LIBDIR)
 endif
 
 # Generate dependency information
