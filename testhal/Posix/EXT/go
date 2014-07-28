@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+import subprocess
+import threading
+import select
+import time
+import os
+
+LINE_SIZE = 132
+BUTTON_DELAY = 0.198
+
+# get PAL output
+pal = subprocess.Popen(['nc', '-kvl', '27000'],
+  stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+# spawn the unit test
+subprocess.Popen(['./ch'])
+
+# wait for ports to open
+time.sleep(1)
+
+def button():
+  while True:
+    time.sleep(BUTTON_DELAY)
+    ext = subprocess.Popen(['nc', 'localhost', '28001'],
+      stdin=subprocess.PIPE)
+    ext.stdin.write('0')
+    ext.stdin.close()
+
+th = threading.Thread(target=button)
+th.setDaemon(True)
+th.start()
+
+poll = select.poll()
+poll.register(pal.stdout.fileno())
+
+def eventloop():
+  header = '%-6s %-8s '
+  while True:
+    events = poll.poll()
+    for fd, event in events:
+
+      if event & (select.POLLERR | select.POLLHUP | select.POLLNVAL):
+        print (header) % (fdname(fd), eventname(event))
+        poll.unregister(fd)
+        continue
+
+      data = os.read(fd, LINE_SIZE)
+      print (header + '"%s"') % (fdname(fd), eventname(event), data.strip())
+
+def fdname(fd):
+    if fd == pal.stdout.fileno():
+        return 'pal'
+
+def eventname(event):
+  if event == select.POLLIN:
+    return 'POLLIN'
+  if event == select.POLLPRI:
+    return 'POLLPRI'
+  if event == select.POLLOUT:
+    return 'POLLOUT'
+  if event == select.POLLERR:
+    return 'POLLERR'
+  if event == select.POLLHUP:
+    return 'POLLHUP'
+  if event == select.POLLNVAL:
+    return 'POLLNVAL'
+
+eventloop()
