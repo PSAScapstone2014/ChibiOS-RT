@@ -26,6 +26,7 @@ extern void sim_connect_output(sim_hal_id_t hid);
 
 /* read data - do not mix these calls on the same HAL ID */
 extern ssize_t sim_read(sim_hal_id_t hid, void *buf, size_t bufsz);
+extern int sim_read_timeout(sim_hal_id_t hid, void *buf, size_t bufsz, int timeout);
 extern void sim_set_input_cb(sim_hal_id_t hid, simio_cb_t cb, void *arg);
 
 /* write data to the given HAL ID */

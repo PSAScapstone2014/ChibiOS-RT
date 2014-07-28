@@ -309,15 +309,21 @@ void sd_lld_stop(SerialDriver *sdp) {
 
 #ifndef CH_DEMO
 
+size_t _serial_lld_read(SerialDriver *sdp, uint8_t *b, size_t n) {
+  sim_hal_id_t hid = get_sd_name(sdp, FALSE);
+  return sim_read(hid, b, n);
+}
+
+size_t _serial_lld_read_timeout(SerialDriver *sdp, uint8_t *b, size_t n, systime_t t) {
+  sim_hal_id_t hid = get_sd_name(sdp, FALSE);
+  return sim_read_timeout(hid, b, n, t);
+}
+
 size_t _serial_lld_write(SerialDriver *sdp, uint8_t *b, size_t n) {
   sim_hal_id_t hid = get_sd_name(sdp, TRUE);
   return sim_write(hid, b, n);
 }
 
-size_t _serial_lld_read(SerialDriver *sdp, uint8_t *b, size_t n) {
-  sim_hal_id_t hid = get_sd_name(sdp, FALSE);
-  return sim_read(hid, b, n);
-}
 
 #endif /* CH_DEMO */
 

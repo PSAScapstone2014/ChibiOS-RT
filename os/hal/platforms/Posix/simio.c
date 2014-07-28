@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <poll.h>
 
 static pthread_mutex_t simio_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t listen_cond = PTHREAD_COND_INITIALIZER;
@@ -231,6 +232,15 @@ extern void sim_connect_output(sim_hal_id_t hid) {
 
   printf("simio %s driver connected to %s:%d\n",
     hid2str(hid), sim_host[hid].ip_addr, sim_host[hid].port);
+}
+
+extern int sim_read_timeout(sim_hal_id_t hid, void *buf, size_t bufsz, int timeout) {
+  struct pollfd fd = { fdin[hid], POLLIN, 0 };
+  int ready = poll(&fd, 1, timeout);
+  if (ready > 0)
+    return sim_read(hid, buf, bufsz);
+  else
+    return ready;
 }
 
 extern ssize_t sim_read(sim_hal_id_t hid, void *buf, size_t bufsz) {
