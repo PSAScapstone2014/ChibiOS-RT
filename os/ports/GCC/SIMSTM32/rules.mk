@@ -40,6 +40,9 @@ else
   DADEFS += -DCORTEX_USE_FPU=FALSE
 endif
 
+# Disable LWIP
+DDEFS += -DLWIP_SOCKET=0
+
 # Output directory and files
 ifeq ($(BUILDDIR),)
   BUILDDIR = build

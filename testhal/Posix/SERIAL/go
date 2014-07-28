@@ -1,0 +1,2 @@
+#!/bin/sh
+./ch --sd1_output_port 28011

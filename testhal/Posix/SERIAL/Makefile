@@ -16,12 +16,12 @@
 # Start of default section
 #
 
-TRGT = mingw32-
+TRGT =
 CC   = $(TRGT)gcc
 AS   = $(TRGT)gcc -x assembler-with-cpp
 
 # List all default C defines here, like -D_DEBUG=1
-DDEFS = -DCH_DEMO -DSHELL_USE_IPRINTF=FALSE
+DDEFS = -DSHELL_USE_IPRINTF=FALSE
 
 # List all default ASM defines here, like -D_DEBUG=1
 DADEFS =
@@ -33,7 +33,7 @@ DINCDIR =
 DLIBDIR =
 
 # List all default libraries here
-DLIBS = -lws2_32
+DLIBS =
 
 #
 # End of default section
@@ -56,11 +56,11 @@ UDEFS =
 UADEFS =
 
 # Imported source files
-CHIBIOS = ../..
+CHIBIOS = ../../..
 include $(CHIBIOS)/boards/simulator/board.mk
 include ${CHIBIOS}/os/hal/hal.mk
-include ${CHIBIOS}/os/hal/platforms/Win32/platform.mk
-include ${CHIBIOS}/os/ports/GCC/SIMIA32/port.mk
+include ${CHIBIOS}/os/hal/platforms/Posix/platform.mk
+include ${CHIBIOS}/os/ports/GCC/SIMSTM32/port.mk
 include ${CHIBIOS}/os/kernel/kernel.mk
 include ${CHIBIOS}/test/test.mk
 
@@ -72,7 +72,6 @@ SRC  = ${PORTSRC} \
        ${PLATFORMSRC} \
        $(BOARDSRC) \
        ${CHIBIOS}/os/various/shell.c \
-       ${CHIBIOS}/os/various/memstreams.c \
        ${CHIBIOS}/os/various/chprintf.c \
        main.c
 
@@ -97,7 +96,6 @@ OPT = -ggdb -O2 -fomit-frame-pointer
 # End of user defines
 ##############################################################################################
 
-
 INCDIR  = $(patsubst %,-I%,$(DINCDIR) $(UINCDIR))
 LIBDIR  = $(patsubst %,-L%,$(DLIBDIR) $(ULIBDIR))
 DEFS    = $(DDEFS) $(UDEFS)
@@ -105,9 +103,25 @@ ADEFS   = $(DADEFS) $(UADEFS)
 OBJS    = $(ASRC:.s=.o) $(SRC:.c=.o)
 LIBS    = $(DLIBS) $(ULIBS)
 
-LDFLAGS = -Wl,-Map=$(PROJECT).map,--cref,--no-warn-mismatch $(LIBDIR)
 ASFLAGS = -Wa,-amhls=$(<:.s=.lst) $(ADEFS)
-CPFLAGS = $(OPT) -Wall -Wextra -Wstrict-prototypes -fverbose-asm -Wa,-alms=$(<:.c=.lst) $(DEFS)
+CPFLAGS = $(OPT) -Wall -Wextra -Wstrict-prototypes -fverbose-asm $(DEFS)
+
+ifeq ($(HOST_OSX),yes)
+  ifeq ($(OSX_SDK),)
+    OSX_SDK = /Developer/SDKs/MacOSX10.7.sdk
+  endif
+  ifeq ($(OSX_ARCH),)
+    OSX_ARCH = -mmacosx-version-min=10.3 -arch i386
+  endif
+
+  CPFLAGS += -isysroot $(OSX_SDK) $(OSX_ARCH)
+  LDFLAGS = -Wl -Map=$(PROJECT).map,-syslibroot,$(OSX_SDK),$(LIBDIR)
+  LIBS += $(OSX_ARCH)
+else
+  # Linux, or other
+  CPFLAGS += -m32 -pthread -Wa,-alms=$(<:.c=.lst)
+  LDFLAGS = -m32 -pthread -Wl,-Map=$(PROJECT).map,--cref,--no-warn-mismatch $(LIBDIR)
+endif
 
 # Generate dependency information
 CPFLAGS += -MD -MP -MF .dep/$(@F).d
@@ -116,7 +130,7 @@ CPFLAGS += -MD -MP -MF .dep/$(@F).d
 # makefile rules
 #
 
-all: $(OBJS) $(PROJECT).exe
+all: $(OBJS) $(PROJECT)
 
 %.o : %.c
 	$(CC) -c $(CPFLAGS) -I . $(INCDIR) $< -o $@
@@ -124,7 +138,7 @@ all: $(OBJS) $(PROJECT).exe
 %.o : %.s
 	$(AS) -c $(ASFLAGS) $< -o $@
 
-%exe: $(OBJS)
+$(PROJECT): $(OBJS)
 	$(CC) $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 gcov:
@@ -134,7 +148,7 @@ gcov:
 
 clean:
 	-rm -f $(OBJS)
-	-rm -f $(PROJECT).exe
+	-rm -f $(PROJECT)
 	-rm -f $(PROJECT).map
 	-rm -f $(SRC:.c=.c.bak)
 	-rm -f $(SRC:.c=.lst)

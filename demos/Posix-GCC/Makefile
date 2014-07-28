@@ -16,12 +16,14 @@
 # Start of default section
 #
 
-TRGT = 
+CH_DEMO = TRUE
+
+TRGT =
 CC   = $(TRGT)gcc
 AS   = $(TRGT)gcc -x assembler-with-cpp
 
 # List all default C defines here, like -D_DEBUG=1
-DDEFS = -DSIMULATOR -DSHELL_USE_IPRINTF=FALSE
+DDEFS = -DCH_DEMO -DSHELL_USE_IPRINTF=FALSE
 
 # List all default ASM defines here, like -D_DEBUG=1
 DADEFS =
@@ -105,7 +107,7 @@ OBJS    = $(ASRC:.s=.o) $(SRC:.c=.o)
 LIBS    = $(DLIBS) $(ULIBS)
 
 ASFLAGS = -Wa,-amhls=$(<:.s=.lst) $(ADEFS)
-CPFLAGS = $(OPT) -Wall -Wextra -Wstrict-prototypes -fverbose-asm $(DEFS) 
+CPFLAGS = $(OPT) -Wall -Wextra -Wstrict-prototypes -fverbose-asm $(DEFS)
 
 ifeq ($(HOST_OSX),yes)
   ifeq ($(OSX_SDK),)
@@ -147,7 +149,7 @@ gcov:
 	$(COV) -u $(subst /,\,$(SRC))
 	-mv *.gcov ./gcov
 
-clean:                                      
+clean:
 	-rm -f $(OBJS)
 	-rm -f $(PROJECT)
 	-rm -f $(PROJECT).map

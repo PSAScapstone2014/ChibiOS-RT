@@ -228,8 +228,12 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_write) || defined(__DOXYGEN__)
 #define sdWrite(sdp, b, n)                                                  \
   chOQWriteTimeout(&(sdp)->oqueue, b, n, TIME_INFINITE)
+#else
+#define sdWrite(sdp, b, n) serial_lld_write((sdp), (b), (n))
+#endif
 
 /**
  * @brief   Direct blocking write to a @p SerialDriver with timeout
@@ -268,8 +272,12 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_read) || defined(__DOXYGEN__)
 #define sdRead(sdp, b, n)                                                   \
   chIQReadTimeout(&(sdp)->iqueue, b, n, TIME_INFINITE)
+#else
+#define sdRead(sdp, b, n) serial_lld_read((sdp), (b), (n))
+#endif
 
 /**
  * @brief   Direct blocking read from a @p SerialDriver with timeout
