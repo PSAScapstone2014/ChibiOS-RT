@@ -68,16 +68,16 @@ timer_t timer;
 *
 * @param[in] gptp pointer to a @p GPTDriver object
 */
-static void gpt_lld_serve_interrupt(GPTDriver *gptp) {
+/*static void gpt_lld_serve_interrupt(GPTDriver *gptp) {
 
   //Need to point to gpt tmr itimer variable. 
   timer = gptp->tmr; 
   if (gptp->state == GPT_ONESHOT) {
-    gptp->state = GPT_READY; /* Back in GPT_READY state. */
-    gpt_lld_stop_timer(gptp); /* Timer automatically stopped. */
-  }
-  gptp->config->callback(gptp);
-}
+    gptp->state = GPT_READY; *//* Back in GPT_READY state. */
+   /* gpt_lld_stop_timer(gptp);*/ /* Timer automatically stopped. */
+//  }
+  /*gptp->config->callback(gptp);*/
+//}
 
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
@@ -96,8 +96,8 @@ static void gpt_lld_serve_interrupt(GPTDriver *gptp) {
 void gpt_lld_init(void) {
 
 #if POSIX_GPT_USE_TIM1
-  GPTD1->tmr = null;
-  GPTD1->sigev = SIGEVNONE;
+  /*GPTD1->tmr = 0;
+  GPTD1->sigev = SIGEVNONE;*/
   /* Driver initialization.*/
   gptObjectInit(&GPTD1);
 #endif
@@ -116,7 +116,7 @@ void gpt_lld_start(GPTDriver *gptp) {
 
 #if POSIX_GPT_USE_GPT1
     if (&GPTD1 == gptp) {
-      timer = timer_create(CLOCK_REALTIME, &gptp->sigev, &gptp->tmr);
+      //timer = timer_create(CLOCK_REALTIME, &gptp->sigev, &gptp->tmr);
     }
 #endif /* POSIX_GPT_USE_GPT1 */
   }
@@ -140,7 +140,7 @@ void gpt_lld_stop(GPTDriver *gptp) {
     /* Disables the peripheral.*/
 #if POSIX_GPT_USE_GPT1
     if (&GPTD1 == gptp) {
-      timer_delete(timer);
+      //timer_delete(timer);
     }
 #endif /* POSIX_GPT_USE_GPT1 */
   }
@@ -158,10 +158,10 @@ void gpt_lld_start_timer(GPTDriver *gptp, gptcnt_t interval) {
 
   (void)gptp;
   (void)interval;
-  gptp->tmr->it_value.tv_sec = interval / 1000000000;
-  gptp->tmr->it_value.tv_nsec = interval % 100000000;
-  gptp->tmr->it_interval.tv_sec = gptp->tmr->it_value.tv_sec;
-  gptp->tmr->it_interval.tv_nsec = gptp->tmr->it_value.tv_nsec;
+  //gptp->tmr->it_value.tv_sec = interval / 1000000000;
+  //gptp->tmr->it_value.tv_nsec = interval % 100000000;
+  //gptp->tmr->it_interval.tv_sec = gptp->tmr->it_value.tv_sec;
+  //gptp->tmr->it_interval.tv_nsec = gptp->tmr->it_value.tv_nsec;
 }
 
 /**
@@ -175,12 +175,12 @@ void gpt_lld_stop_timer(GPTDriver *gptp) {
 
   (void)gptp;
   struct itimerspec *old_tmr = gptp->tmr;
-  gptp->tmr->it_value.tv_sec = 0;
-  gptp->tmr->it_value.tv_nsec = 0;
-  gptp->tmr->it_interval.tv_sec = gptp->tmr->it_value.tv_sec;
-  gptp->tmr->it_interval.tv_nsec = gptp->tmr->it_value.tv_nsec;
-  const struct itimerspec *new_tmr = gptp->tmr;
-  timer_settime(timer, TIMER_ABSTIME, &new_tmr, &old_tmr);
+  //gptp->tmr->it_value.tv_sec = 0;
+  //gptp->tmr->it_value.tv_nsec = 0;
+  //gptp->tmr->it_interval.tv_sec = gptp->tmr->it_value.tv_sec;
+  //gptp->tmr->it_interval.tv_nsec = gptp->tmr->it_value.tv_nsec;
+  //const struct itimerspec *new_tmr = gptp->tmr;
+  //timer_settime(timer, TIMER_ABSTIME, &new_tmr, &old_tmr);
 }
 
 /**
@@ -198,8 +198,8 @@ void gpt_lld_polled_delay(GPTDriver *gptp, gptcnt_t interval) {
 
   (void)gptp;
   (void)interval;
-  unsigned int seconds = interval/sysconf(_SC_CLK_TCK);
-  gptp.sleep(seconds);
+  //unsigned int seconds = interval/sysconf(_SC_CLK_TCK);
+  //gptp.sleep(seconds);
 }
 
 #endif /* HAL_USE_GPT */
