@@ -20,6 +20,9 @@
 /*
  * GPT1 callback.
  */
+
+GPTDriver GPTD1;
+
 static void gpt1cb(GPTDriver *gptp) {
 
   (void)gptp;
