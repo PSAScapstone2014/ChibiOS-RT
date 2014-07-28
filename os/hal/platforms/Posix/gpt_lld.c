@@ -45,6 +45,13 @@
   GPTDriver GPTD1;
 #endif
 
+/**
+ * @brief   GPTD2 driver identifier.
+ */
+#if POSIX_GPT_USE_GPT2 || defined(__DOXYGEN__)
+  GPTDriver GPTD2;
+#endif
+
 /*===========================================================================*/
 /* Driver local variables and types.                                         
  */
@@ -89,7 +96,8 @@ static void gpt_lld_serve_interrupt(GPTDriver *gptp) {
 void gpt_lld_init(void) {
 
 #if POSIX_GPT_USE_TIM1
-  GPTD1.timer = 0;
+  GPTD1->tmr = null;
+  GPTD1->sigev = SIGEVNONE;
   /* Driver initialization.*/
   gptObjectInit(&GPTD1);
 #endif
