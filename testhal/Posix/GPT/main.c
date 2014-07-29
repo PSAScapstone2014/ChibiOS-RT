@@ -17,52 +17,73 @@
 #include "ch.h"
 #include "hal.h"
 
+
 /*
- * GPT1 callback.
- */
-static void gpt1cb(GPTDriver *gptp) {
+* GPT2 callback.
+*/
+static void gpt2cb(GPTDriver *gptp) {
 
   (void)gptp;
   palSetPad(GPIOD, GPIOD_LED5);
   chSysLockFromIsr();
-  gptStartOneShotI(&GPTD1, 1000);   /* 0.1 second pulse.*/
+  gptStartOneShotI(&GPTD1, 1000); /* 0.1 second pulse.*/
   chSysUnlockFromIsr();
 }
 
 /*
- * GPT1 configuration.
- */
+* GPT3 callback.
+*/
+static void gpt1cb(GPTDriver *gptp) {
+
+  (void)gptp;
+  palClearPad(GPIOD, GPIOD_LED5);
+}
+
+/*
+* GPT2 configuration.
+*/
 static const GPTConfig gpt1cfg = {
-  10000,    /* 10kHz timer clock.*/
-  gpt1cb,   /* Timer callback.*/
+  10000, /* 10kHz timer clock.*/
+  gpt1cb, /* Timer callback.*/
   0
 };
 
 /*
- * Application entry point.
- */
+* GPT3 configuration.
+*/
+static const GPTConfig gpt2cfg = {
+  10000, /* 10kHz timer clock.*/
+  gpt2cb, /* Timer callback.*/
+  0
+};
+
+/*
+* Application entry point.
+*/
 int main(void) {
 
   /*
-   * System initializations.
-   * - HAL initialization, this also initializes the configured device drivers
-   *   and performs the board-specific initializations.
-   * - Kernel initialization, the main() function becomes a thread and the
-   *   RTOS is active.
-   */
+* System initializations.
+* - HAL initialization, this also initializes the configured device drivers
+* and performs the board-specific initializations.
+* - Kernel initialization, the main() function becomes a thread and the
+* RTOS is active.
+*/
   halInit();
   chSysInit();
 
   /*
-   * Initializes the GPT driver 1
-   */
+* Initializes the GPT drivers 2 and 3.
+*/
   gptStart(&GPTD1, &gpt1cfg);
   gptPolledDelay(&GPTD1, 10); /* Small delay.*/
+  gptStart(&GPTD2, &gpt2cfg);
+  gptPolledDelay(&GPTD2, 10); /* Small delay.*/
 
   /*
-   * Normal main() thread activity, it changes the GPT1 period every
-   * five seconds.
-   */
+* Normal main() thread activity, it changes the GPT1 period every
+* five seconds.
+*/
   while (TRUE) {
     palSetPad(GPIOD, GPIOD_LED4);
     gptStartContinuous(&GPTD1, 5000);
