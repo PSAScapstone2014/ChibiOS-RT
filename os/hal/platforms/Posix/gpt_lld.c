@@ -99,13 +99,13 @@ void gpt_lld_init(void) {
 #if POSIX_GPT_USE_GPT1
   GPTD1.tmr = 0;
   GPTD1.sigev = SIGEV_NONE;
+  /* Driver initialization.*/
+  gptObjectInit(&GPTD1);
 #endif
 #if POSIX_GPT_USE_GPT2
   GPTD2.tmr = 0;
   GPTD2.sigev = SIGEV_NONE;
-#endif
   /* Driver initialization.*/
-  gptObjectInit(&GPTD1);
   gptObjectInit(&GPTD2);
 #endif
 }
@@ -123,11 +123,11 @@ void gpt_lld_start(GPTDriver *gptp) {
 
 #if POSIX_GPT_USE_GPT1
     if (&GPTD1 == gptp) {
-      timer = timer_create(CLOCK_REALTIME, &gptp->sigev, &gptp->tmr);
+//      timer = timer_create(CLOCK_REALTIME, &gptp->sigev, &gptp->tmr);
     }
 
     else if(&GPTD2 == gptp) {
-      timer = timer_create(CLOCK_REALTIME, &gptp->sigev, &gptp->tmr);
+  //    timer = timer_create(CLOCK_REALTIME, &gptp->sigev, &gptp->tmr);
     }
 
 #endif /* POSIX_GPT_USE_GPT1 */
@@ -155,6 +155,12 @@ void gpt_lld_stop(GPTDriver *gptp) {
       //timer_delete(timer);
     }
 #endif /* POSIX_GPT_USE_GPT1 */
+
+#if POSIX_GPT_USE_GPT2
+    if (&GPTD2 == gptp) {
+      //timer_delete(timer);
+    }
+#endif /* POSIX_GPT_USE_GPT2 */
   }
 }
 
