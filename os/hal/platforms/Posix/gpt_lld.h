@@ -49,8 +49,8 @@
  * @details If set to @p TRUE the support for GPTD1 is included.
  * @note    The default is @p TRUE.
  */
-#if !defined(POSIX_GPT_USE_TIM1) || defined(__DOXYGEN__)
-#define POSIX_GPT_USE_TIM1                  TRUE
+#if !defined(POSIX_GPT_USE_GPT1) || defined(__DOXYGEN__)
+#define POSIX_GPT_USE_GPT1                  TRUE
 #endif
 /** @} */
 
@@ -59,8 +59,8 @@
  * @details If set to @p TRUE the support for GPTD2 is included.
  * @note    The default is @p TRUE.
  */
-#if !defined(POSIX_GPT_USE_TIM2) || defined(__DOXYGEN__)
-#define POSIX_GPT_USE_TIM2                  TRUE
+#if !defined(POSIX_GPT_USE_GPT2) || defined(__DOXYGEN__)
+#define POSIX_GPT_USE_GPT2                  TRUE
 #endif
 /** @} */
 
@@ -148,11 +148,11 @@ struct GPTDriver {
 /* External declarations.                                                    */
 /*===========================================================================*/
 
-#if POSIX_GPT_USE_TIM1 && !defined(__DOXYGEN__)
+#if POSIX_GPT_USE_GPT1 && !defined(__DOXYGEN__)
 extern GPTDriver GPTD1;
 #endif
 
-#if POSIX_GPT_USE_TIM2 && !defined(__DOXYGEN__)
+#if POSIX_GPT_USE_GPT2 && !defined(__DOXYGEN__)
 extern GPTDriver GPTD2;
 #endif
 
