@@ -27,6 +27,7 @@
 
 #include <sys/types.h>
 #include <time.h>
+#include <signal.h>
 
 #if HAL_USE_GPT || defined(__DOXYGEN__)
 
@@ -48,8 +49,18 @@
  * @details If set to @p TRUE the support for GPTD1 is included.
  * @note    The default is @p TRUE.
  */
-#if !defined(POSIX_GPT_USE_TIM1) || defined(__DOXYGEN__)
-#define POSIX_GPT_USE_TIM1                  FALSE
+#if !defined(POSIX_GPT_USE_GPT1) || defined(__DOXYGEN__)
+#define POSIX_GPT_USE_GPT1                  TRUE
+#endif
+/** @} */
+
+/**
+ * @brief   GPTD2 driver enable switch.
+ * @details If set to @p TRUE the support for GPTD2 is included.
+ * @note    The default is @p TRUE.
+ */
+#if !defined(POSIX_GPT_USE_GPT2) || defined(__DOXYGEN__)
+#define POSIX_GPT_USE_GPT2                  TRUE
 #endif
 /** @} */
 
@@ -106,7 +117,7 @@ struct GPTDriver {
   GPT_DRIVER_EXT_FIELDS
 #endif
   /* End of the mandatory fields.*/
-  /* Pointer to itimer structure */
+  /* Pointer to itimer and sigevent structures*/
   struct itimerspec         *tmr;
   struct sigevent           *sigev;
 };
@@ -137,9 +148,14 @@ struct GPTDriver {
 /* External declarations.                                                    */
 /*===========================================================================*/
 
-#if POSIX_GPT_USE_TIM1 && !defined(__DOXYGEN__)
+#if POSIX_GPT_USE_GPT1 && !defined(__DOXYGEN__)
 extern GPTDriver GPTD1;
 #endif
+
+#if POSIX_GPT_USE_GPT2 && !defined(__DOXYGEN__)
+extern GPTDriver GPTD2;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
