@@ -1,68 +1,42 @@
 #!/usr/bin/env python
+from SocketServer import StreamRequestHandler, TCPServer
 import subprocess
 import threading
-import select
 import time
-import os
+import sys
 
-LINE_SIZE = 132
-BUTTON_DELAY = 0.198
+BUTTON_DELAY = 1
 
-# get PAL output
-pal = subprocess.Popen(['nc', '-kvl', '27000'],
-  stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+class PAL(StreamRequestHandler):
+  def handle(self):
+    print '[PAL] CONNECT'
+    for line in self.rfile:
+      sys.stdout.write('[PAL] <- %s' % line)
+
+class EXT(StreamRequestHandler):
+  channel = '\x00'
+
+  def handle(self):
+    print '[EXT] CONNECT'
+    while True:
+      print '[EXT] -> %s' % repr(self.channel)
+      self.wfile.write(self.channel)
+      time.sleep(BUTTON_DELAY)
+
+# prevent bind errors on relaunch
+TCPServer.allow_reuse_address = True
+
+# listen for PAL connections
+pal = TCPServer(('localhost', 27000), PAL)
+pal_th = threading.Thread(target=pal.handle_request)
+pal_th.setDaemon(True)
+pal_th.start()
+
+# listen for EXT connections
+ext = TCPServer(('localhost', 27020), EXT)
+ext_th = threading.Thread(target=ext.handle_request)
+ext_th.setDaemon(True)
+ext_th.start()
 
 # spawn the unit test
-subprocess.Popen(['./ch'])
-
-# wait for ports to open
-time.sleep(1)
-
-def button():
-  while True:
-    time.sleep(BUTTON_DELAY)
-    ext = subprocess.Popen(['nc', 'localhost', '28001'],
-      stdin=subprocess.PIPE)
-    ext.stdin.write('0')
-    ext.stdin.close()
-
-th = threading.Thread(target=button)
-th.setDaemon(True)
-th.start()
-
-poll = select.poll()
-poll.register(pal.stdout.fileno())
-
-def eventloop():
-  header = '%-6s %-8s '
-  while True:
-    events = poll.poll()
-    for fd, event in events:
-
-      if event & (select.POLLERR | select.POLLHUP | select.POLLNVAL):
-        print (header) % (fdname(fd), eventname(event))
-        poll.unregister(fd)
-        continue
-
-      data = os.read(fd, LINE_SIZE)
-      print (header + '"%s"') % (fdname(fd), eventname(event), data.strip())
-
-def fdname(fd):
-    if fd == pal.stdout.fileno():
-        return 'pal'
-
-def eventname(event):
-  if event == select.POLLIN:
-    return 'POLLIN'
-  if event == select.POLLPRI:
-    return 'POLLPRI'
-  if event == select.POLLOUT:
-    return 'POLLOUT'
-  if event == select.POLLERR:
-    return 'POLLERR'
-  if event == select.POLLHUP:
-    return 'POLLHUP'
-  if event == select.POLLNVAL:
-    return 'POLLNVAL'
-
-eventloop()
+subprocess.check_call(['./ch'])

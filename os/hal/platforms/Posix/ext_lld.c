@@ -22,10 +22,8 @@
  * @{
  */
 
-#include <stdlib.h>
 #include "ch.h"
 #include "hal.h"
-#include "chprintf.h"
 #include "simio.h"
 
 #if HAL_USE_EXT || defined(__DOXYGEN__)
@@ -33,28 +31,6 @@
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
-
-/**
- * @brief   Shell thread function.
- *
- * @param[in] p         pointer to a @p BaseSequentialStream object
- * @return              Termination reason.
- * @retval RDY_OK       terminated by command.
- * @retval RDY_RESET    terminated by reset condition on the I/O channel.
- *
- * @notapi
- */
-static void ext_input_handler(char *buf, void *vptr) {
-  uint32_t channel;
-  EXTDriver *extp = vptr;
-
-  channel = atoi(buf);
-  if (channel < EXT_MAX_CHANNELS && extp->config->channels[channel].cb) {
-    CH_IRQ_PROLOGUE();
-    extp->config->channels[channel].cb(extp, channel);
-    CH_IRQ_EPILOGUE();
-  }
-}
 
 
 /*===========================================================================*/
@@ -71,6 +47,8 @@ EXTDriver EXTD1;
 /*===========================================================================*/
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
+static WORKING_AREA(wsp, 128);
+static Thread *rthd;
 
 /*===========================================================================*/
 /* Driver local functions.                                                   */
@@ -79,6 +57,25 @@ EXTDriver EXTD1;
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
+
+static msg_t read_thread(void *arg) {
+  EXTDriver *extp = (EXTDriver*)arg;
+  uint8_t channel;
+  while (TRUE) {
+    int nb = sim_read(EXT_IO, &channel, sizeof channel);
+    if (nb < 0) {
+      chThdSleep(1000);
+    }
+    else if (nb > 0) {
+      if (channel < EXT_MAX_CHANNELS && extp->config->channels[channel].cb) {
+        CH_IRQ_PROLOGUE();
+        extp->config->channels[channel].cb(extp, channel);
+        CH_IRQ_EPILOGUE();
+      }
+    }
+  }
+  return 0;
+}
 
 /*===========================================================================*/
 /* Driver exported functions.                                                */
@@ -105,13 +102,16 @@ void ext_lld_init(void) {
  * @notapi
  */
 void ext_lld_start(EXTDriver *extp) {
+
   if (extp->state == EXT_STOP) {
+
     /* Enables the peripheral.*/
-#if PLATFORM_EXT_USE_EXT1
-    if (&EXTD1 == extp) {
-      sim_set_input_cb(EXT_INT, ext_input_handler, (void*)extp);
-    }
-#endif /* PLATFORM_EXT_USE_EXT1 */
+    extp->state = EXT_ACTIVE;
+
+    sim_connect(EXT_IO);
+    rthd = chThdCreateI(wsp, sizeof(wsp), NORMALPRIO, read_thread, (void*)extp);
+    chSchWakeupS(rthd, RDY_OK);
+
   }
 
   /* Configures the peripheral.*/
@@ -127,13 +127,11 @@ void ext_lld_start(EXTDriver *extp) {
 void ext_lld_stop(EXTDriver *extp) {
   if (extp->state == EXT_ACTIVE) {
     /* Resets the peripheral.*/
+    (void)sim_disconnect(EXT_IO);
+    (void)chThdTerminate(rthd);
 
     /* Disables the peripheral.*/
-#if PLATFORM_EXT_USE_EXT1
-    if (&EXTD1 == extp) {
-      sim_io_stop();
-    }
-#endif /* PLATFORM_EXT_USE_EXT1 */
+    extp->state = EXT_STOP;
   }
 }
 
@@ -146,12 +144,8 @@ void ext_lld_stop(EXTDriver *extp) {
  * @notapi
  */
 void ext_lld_channel_enable(EXTDriver *extp, expchannel_t channel) {
+  (void)extp;
   (void)channel;
-#if PLATFORM_EXT_USE_EXT1
-    if (&EXTD1 == extp) {
-    }
-#endif /* PLATFORM_EXT_USE_EXT1 */
-
 }
 
 /**

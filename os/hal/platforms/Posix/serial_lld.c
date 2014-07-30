@@ -31,6 +31,7 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "sim_preempt.h"
 
 #if HAL_USE_SERIAL || defined(__DOXYGEN__)
 
@@ -54,11 +55,6 @@ SerialDriver SD2;
 /** @brief Driver default configuration.*/
 static const SerialConfig default_config = {
 };
-
-typedef enum {
-  IO_INPUT = 0,
-  IO_OUTPUT
-} io_direction;
 
 #ifdef CH_DEMO
 static u_long nb = 1;
@@ -254,12 +250,12 @@ void sd_lld_init(void) {
 #endif /* USE_SIM_SERIAL2 */
 }
 
-sim_hal_id_t get_sd_name(SerialDriver *sdp, io_direction out) {
+sim_hal_id_t get_sd_name(SerialDriver *sdp) {
   sim_hal_id_t hid;
   if (!strcmp((char*)(sdp->com_name), "SD1"))
-    hid = out ? SD1_OUT : SD1_IN;
+    hid = SD1_IO;
   else if (!strcmp((char*)(sdp->com_name), "SD2"))
-    hid = out ? SD2_OUT : SD2_IN;
+    hid = SD2_IO;
   else {
     fprintf(stderr, "ERROR _serial_lld_write unknown com_name %s\n", sdp->com_name);
     exit(EXIT_FAILURE);
@@ -278,8 +274,7 @@ void sd_lld_start(SerialDriver *sdp, const SerialConfig *config) {
     config = &default_config;
 
 #ifndef CH_DEMO
-  sim_accept_input(get_sd_name(sdp, IO_INPUT));
-  sim_connect_output(get_sd_name(sdp, IO_OUTPUT));
+  sim_connect(get_sd_name(sdp));
 #endif /* CH_DEMO */
 
 #if USE_SIM_SERIAL1
@@ -310,20 +305,19 @@ void sd_lld_stop(SerialDriver *sdp) {
 #ifndef CH_DEMO
 
 size_t _serial_lld_read(SerialDriver *sdp, uint8_t *b, size_t n) {
-  sim_hal_id_t hid = get_sd_name(sdp, FALSE);
+  sim_hal_id_t hid = get_sd_name(sdp);
   return sim_read(hid, b, n);
 }
 
 size_t _serial_lld_read_timeout(SerialDriver *sdp, uint8_t *b, size_t n, systime_t t) {
-  sim_hal_id_t hid = get_sd_name(sdp, FALSE);
+  sim_hal_id_t hid = get_sd_name(sdp);
   return sim_read_timeout(hid, b, n, t);
 }
 
 size_t _serial_lld_write(SerialDriver *sdp, uint8_t *b, size_t n) {
-  sim_hal_id_t hid = get_sd_name(sdp, TRUE);
+  sim_hal_id_t hid = get_sd_name(sdp);
   return sim_write(hid, b, n);
 }
-
 
 #endif /* CH_DEMO */
 

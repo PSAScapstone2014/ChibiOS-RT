@@ -9,6 +9,7 @@ PLATFORMSRC = ${CHIBIOS}/os/hal/platforms/Posix/hal_lld.c \
 
 ifndef CH_DEMO
 PLATFORMSRC+= ${CHIBIOS}/os/hal/platforms/Posix/simio.c
+PLATFORMSRC+= ${CHIBIOS}/os/hal/platforms/Posix/sim_preempt.c
 endif
 
 # Required include directories
