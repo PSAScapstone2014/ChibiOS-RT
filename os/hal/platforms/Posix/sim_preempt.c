@@ -9,46 +9,47 @@
 #include "ch.h"
 #include "sim_preempt.h"
 
-extern int errno;
+static int spin_poll(systime_t timeout, int fd) {
+  struct pollfd fds =
+    { fd, POLLIN|POLLERR|POLLHUP|POLLNVAL, 0 };
 
-#define SPIN_PROLOGUE(timeout, fd)                \
-  struct pollfd fds =                             \
-    { (fd), POLLIN|POLLERR|POLLHUP|POLLNVAL, 0 }; \
-  int nfds;                                       \
-  systime_t start = chTimeNow();                  \
-  systime_t end   = start + (timeout);            \
-                                                  \
-  while ((timeout) == TIME_INFINITE ||            \
-         chTimeIsWithin(start, end)) {            \
-    nfds = poll(&fds, 1, 1);                      \
-    if (fds.revents & ~POLLIN) {                  \
-      close((fd));                                \
-      return -1;                                  \
-    }                                             \
-    if (nfds > 0) {
+  systime_t start = chTimeNow();
+  systime_t end   = start + timeout;
 
-#define SPIN_EPILOGUE(func)                       \
-    } else if (nfds == 0) {                       \
-      /* force reschedule */                      \
-      chThdSleep(1);                              \
-      continue;                                   \
-    }                                             \
-    else if (nfds < 0) {                          \
-      fprintf(stderr, "ERROR sim_" func " %s\n", \
-        strerror(errno));                         \
-      if (errno == EINTR)                         \
-        continue;                                 \
-      else                                        \
-        return -1;                                \
-    }                                             \
+  while (timeout == TIME_INFINITE ||
+         chTimeIsWithin(start, end)) {
+
+    int nfds = poll(&fds, 1, 1);
+    if (fds.revents & ~POLLIN) {
+      return -1;
+    }
+
+    if (nfds < 0) {
+      fprintf(stderr, "ERROR sim_poll %s\n",
+        strerror(errno));
+
+      if (errno == EINTR)
+        continue;
+      else
+        return -1;
+
+    } else if (nfds == 0) {
+      /* force reschedule */
+      chThdSleep(1);
+      continue;
+
+    } else {
+      return nfds;
+    }
   }
 
+  /* shouldn't happen */
+  return -1;
+}
+
 extern int sim_preempt_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
-  SPIN_PROLOGUE(TIME_INFINITE, sockfd)
-
-  return accept(sockfd, addr, addrlen);
-
-  SPIN_EPILOGUE("accept")
+  if (spin_poll(TIME_INFINITE, sockfd) > 0)
+    return accept(sockfd, addr, addrlen);
 
   /* timeout - shouldn't happen */
   errno = EWOULDBLOCK;
@@ -56,14 +57,12 @@ extern int sim_preempt_accept(int sockfd, struct sockaddr *addr, socklen_t *addr
 }
 
 extern size_t sim_preempt_read_timeout(int fd, void *buf, size_t bufsz, systime_t timeout) {
-  SPIN_PROLOGUE(timeout, fd)
-
-  int nb = read(fd, buf, bufsz);
-  if (nb <= 0)
-    close(fd);
-  return nb;
-
-  SPIN_EPILOGUE("read")
+  if (spin_poll(timeout, fd) > 0) {
+    int nb = read(fd, buf, bufsz);
+    if (nb <= 0)
+      close(fd);
+    return nb;
+  }
 
   /* timeout */
   errno = EWOULDBLOCK;
