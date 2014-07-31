@@ -1,0 +1,4 @@
+#!/bin/bash
+nc -kvl 27000 &
+./ch
+kill %1

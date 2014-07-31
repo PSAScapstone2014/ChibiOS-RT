@@ -29,22 +29,12 @@
 
 SerialDriver SD1;
 
-WORKING_AREA(wap, THD_WA_SIZE(128));
-
-/* thread to test a blocking read */
-static msg_t read_thread(void *vptr) {
-  (void)vptr;
-  char buf[80];
-  size_t nb = sdRead(&SD1, (uint8_t*)buf, sizeof buf);
-  printf("sdRead got '%s' [%d bytes]\n", buf, nb);
-}
-
 /*
  * Application entry point.
  */
 int main(int argc, char **argv) {
-  char buf[] = "Hello World!";
-  size_t nb;
+  char buf[256];
+  ssize_t nb;
 
   /* no stdout buffering */
   setbuf(stdout, NULL);
@@ -67,17 +57,14 @@ int main(int argc, char **argv) {
    */
   sdStart(&SD1, NULL);
 
-  /* create thread and give it a chance to start */
-  Thread *rtp = chThdCreateStatic(wap, sizeof(wap), NORMALPRIO, read_thread, NULL);
-  sleep(1);
+  while (TRUE) {
+    while ((nb = sdRead(&SD1, (uint8_t*)buf, sizeof buf)) <= 0) {
+      chThdSleep(1000);
+    }
 
-  /* write something to the driver */
-  printf("sdWrite put '%s' ", buf);
-  nb = sdWrite(&SD1, (uint8_t*)buf, sizeof buf);
-  printf("[%d bytes]\n", nb);
-
-  /* wait for the read to return */
-  chThdWait(rtp);
+    /* echo the data back */
+    (void)sdWrite(&SD1, (uint8_t*)buf, nb);
+  }
 
   return 0;
 }

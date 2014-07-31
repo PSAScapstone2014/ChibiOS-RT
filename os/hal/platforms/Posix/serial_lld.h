@@ -96,14 +96,20 @@
 typedef struct {
 } SerialConfig;
 
-#ifndef CH_DEMO
-# define _serial_driver_network_data
-#else
-# define _serial_driver_network_data                                        \
+#ifdef CH_DEMO
+#define _serial_driver_network_data                                         \
   /* Listen socket for simulated serial port.*/                             \
   SOCKET                    com_listen;                                     \
   /* Data socket for simulated serial port.*/                               \
-  SOCKET                    com_data;
+  SOCKET                    com_data;                                       \
+  /* Port readable name.*/                                                  \
+  const char                *com_name;
+#else
+
+#define _serial_driver_network_data                                         \
+  /* hal layer id */                                                        \
+  sim_hal_id_t              hid;
+
 #endif /* CH_DEMO */
 
 /**
@@ -122,8 +128,6 @@ typedef struct {
   /* Output circular buffer.*/                                              \
   uint8_t                   ob[SERIAL_BUFFERS_SIZE];                        \
   /* End of the mandatory fields.*/                                         \
-  /* Port readable name.*/                                                  \
-  const char                *com_name;                                      \
   _serial_driver_network_data
 
 
@@ -143,8 +147,9 @@ extern SerialDriver SD2;
 #endif
 
 #ifndef CH_DEMO
-#define serial_lld_read(sdp, b, n) _serial_lld_read((sdp), (b), n)
-#define serial_lld_write(sdp, b, n) _serial_lld_write((sdp), (b), n)
+#define serial_lld_read(sdp, b, n) _serial_lld_read((sdp), (b), (n))
+#define serial_lld_read_timeout(sdp, b, n, t) _serial_lld_read_timeout((sdp), (b), (n), (t))
+#define serial_lld_write(sdp, b, n) _serial_lld_write((sdp), (b), (n))
 #endif /* CH_DEMO */
 
 #ifdef __cplusplus
@@ -154,8 +159,9 @@ extern "C" {
   void sd_lld_start(SerialDriver *sdp, const SerialConfig *config);
   void sd_lld_stop(SerialDriver *sdp);
 
-  size_t _serial_lld_write(SerialDriver *sdp, uint8_t *b, size_t n);
   size_t _serial_lld_read(SerialDriver *sdp, uint8_t *b, size_t n);
+  size_t _serial_lld_read_timeout(SerialDriver *sdp, uint8_t *b, size_t n, systime_t t);
+  size_t _serial_lld_write(SerialDriver *sdp, uint8_t *b, size_t n);
 
   bool_t sd_lld_interrupt_pending(void);
 #ifdef __cplusplus

@@ -23,6 +23,7 @@
  * Application entry point.
  */
 int main(void) {
+  int i;
 
   /*
    * System initializations.
@@ -34,9 +35,9 @@ int main(void) {
   halInit();
   chSysInit();
 
-  palWritePad(IOPORT1,1,1);
-
-  printf ("%d\n", palReadPad(IOPORT1,1));  
+  for (i = 0; i < 5; i++) {
+    palWritePad(IOPORT1, i, PAL_HIGH);
+  }
 
   return 0;
 }

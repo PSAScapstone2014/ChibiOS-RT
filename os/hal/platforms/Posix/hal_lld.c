@@ -23,17 +23,10 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <sys/time.h>
 
 #include "ch.h"
 #include "hal.h"
-#include "simio.h"
-
-#ifdef CH_DEMO
-# define sim_io_lock()
-# define sim_io_unlock()
-#endif
 
 /*===========================================================================*/
 /* Driver exported variables.                                                */
@@ -92,8 +85,6 @@ void ChkIntSources(void) {
   if (timercmp(&tv, &nextcnt, >=)) {
     timeradd(&nextcnt, &tick, &nextcnt);
 
-    sim_io_lock();
-
     CH_IRQ_PROLOGUE();
 
     chSysLockFromIsr();
@@ -104,12 +95,9 @@ void ChkIntSources(void) {
 
     dbg_check_lock();
     if (chSchIsPreemptionRequired()) {
-      sim_io_unlock();
       chSchDoReschedule();
     }
     dbg_check_unlock();
-
-    sim_io_unlock();
   }
 
 }

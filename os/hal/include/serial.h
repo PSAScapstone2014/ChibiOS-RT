@@ -290,8 +290,12 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_read_timeout) || defined(__DOXYGEN__)
 #define sdReadTimeout(sdp, b, n, t)                                         \
   chIQReadTimeout(&(sdp)->iqueue, b, n, t)
+#else
+#define sdReadTimeout(sdp, b, n, t) serial_lld_read_timeout((sdp), (b), (n), (t))
+#endif
 
 /**
  * @brief   Direct non-blocking read from a @p SerialDriver.

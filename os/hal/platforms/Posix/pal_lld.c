@@ -81,7 +81,7 @@ char* port_lookup(ioportid_t port) {
 /*===========================================================================*/
 
 void _pal_lld_init(const PALConfig *config) {
-  sim_connect_output(PAL_OUT);
+  sim_connect(PAL_IO);
   vio_port_1 = (config)->VP1Data;
   vio_port_2 = (config)->VP2Data;
   vio_port_3 = (config)->VP3Data;
@@ -97,7 +97,7 @@ void _pal_lld_init(const PALConfig *config) {
  * @notapi
  */
  void _pal_lld_writeport(ioportid_t port, uint32_t bits) {
-  sim_printf(PAL_OUT, "set %s latch to 0x%02x (was 0x%02x)\n", port_lookup(port), bits, port->latch);
+  sim_printf(PAL_IO, "set %s latch to 0x%02x (was 0x%02x)\n", port_lookup(port), bits, port->latch);
   port->latch = bits;
 }
 
