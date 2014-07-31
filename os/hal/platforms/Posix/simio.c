@@ -13,6 +13,10 @@
 #include "simio.h"
 #include "sim_preempt.h"
 
+/* console errors */
+#define eprintf(fmt, args...) \
+  (void)fprintf(stderr, "ERROR simio " fmt " at %s:%d\n" , ##args , __FILE__, __LINE__)
+
 /* define default ports for HAL drivers */
 static struct sim_host_t {
   char*     ip_addr;
@@ -68,7 +72,7 @@ extern void sim_getopt(int argc, char **argv) {
       case 'D': sim_host[EXT_IO].port = atoi(optarg); break;
 
       default:
-        sim_eprintf("usage: %s <options>", argv[0]); /* ToDo: option list help */
+        eprintf("usage: %s <options>", argv[0]); /* ToDo: option list help */
         exit(EXIT_FAILURE);
     }
   }
@@ -98,13 +102,13 @@ static SOCKET sock_init() {
   SOCKET sock = INVALID_SOCKET;
 
   if ((prtp = getprotobyname("tcp")) == NULL) {
-    sim_eprintf("getprotobyname");
+    eprintf("getprotobyname");
     exit(EXIT_FAILURE);
   }
 
   sock = socket(PF_INET, SOCK_STREAM, prtp->p_proto);
   if (sock == INVALID_SOCKET) {
-    sim_eprintf("socket");
+    eprintf("socket");
     exit(EXIT_FAILURE);
   }
   return sock;
@@ -115,7 +119,7 @@ extern int sim_connect(sim_hal_id_t hid) {
 
   /* ignore repeated calls */
   if (simfd[hid]) {
-    sim_eprintf("%s already connected", hid2str(hid));
+    eprintf("%s already connected", hid2str(hid));
     return 0;
   }
 
@@ -124,7 +128,7 @@ extern int sim_connect(sim_hal_id_t hid) {
   addr.sin_port = htons(sim_host[hid].port);
 
   if (!inet_aton(sim_host[hid].ip_addr, &addr.sin_addr)) {
-    sim_eprintf("%s invalid host %s",
+    eprintf("%s invalid host %s",
       hid2str(hid), sim_host[hid].ip_addr);
     exit(EXIT_FAILURE);
   }
@@ -132,7 +136,7 @@ extern int sim_connect(sim_hal_id_t hid) {
   /* create socket and connect to remote */
   simfd[hid] = sock_init();
   if (connect(simfd[hid], (struct sockaddr*)&addr, sizeof addr)) {
-    sim_eprintf("%s connect %s:%d %s",
+    eprintf("%s connect %s:%d %s",
       hid2str(hid), sim_host[hid].ip_addr, sim_host[hid].port, strerror(errno));
     simfd[hid] = 0;
     return -1;
@@ -153,7 +157,7 @@ extern ssize_t sim_read_timeout(sim_hal_id_t hid, void *buf, size_t bufsz, int t
 
   ssize_t nb = sim_preempt_read_timeout(simfd[hid], buf, bufsz, timeout);
   if (nb < 0) {
-    sim_eprintf("%s read %s", hid2str(hid), strerror(errno));
+    eprintf("%s read %s", hid2str(hid), strerror(errno));
     (void)sim_disconnect(hid);
   }
 
@@ -170,7 +174,7 @@ extern ssize_t sim_write(sim_hal_id_t hid, void *buf, size_t bufsz) {
 
   ssize_t nb = write(simfd[hid], buf, bufsz);
   if (nb < 0) {
-    sim_eprintf("%s write %s", hid2str(hid), strerror(errno));
+    eprintf("%s write %s", hid2str(hid), strerror(errno));
     (void)sim_disconnect(hid);
   }
 

@@ -96,14 +96,20 @@
 typedef struct {
 } SerialConfig;
 
-#ifndef CH_DEMO
-# define _serial_driver_network_data
-#else
-# define _serial_driver_network_data                                        \
+#ifdef CH_DEMO
+#define _serial_driver_network_data                                         \
   /* Listen socket for simulated serial port.*/                             \
   SOCKET                    com_listen;                                     \
   /* Data socket for simulated serial port.*/                               \
-  SOCKET                    com_data;
+  SOCKET                    com_data;                                       \
+  /* Port readable name.*/                                                  \
+  const char                *com_name;
+#else
+
+#define _serial_driver_network_data                                         \
+  /* hal layer id */                                                        \
+  sim_hal_id_t              hid;
+
 #endif /* CH_DEMO */
 
 /**
@@ -122,8 +128,6 @@ typedef struct {
   /* Output circular buffer.*/                                              \
   uint8_t                   ob[SERIAL_BUFFERS_SIZE];                        \
   /* End of the mandatory fields.*/                                         \
-  /* Port readable name.*/                                                  \
-  const char                *com_name;                                      \
   _serial_driver_network_data
 
 

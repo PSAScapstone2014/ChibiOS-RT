@@ -17,10 +17,6 @@ typedef enum {
 
 typedef void (*simio_cb_t)(char *buf, void *arg);
 
-/* console errors */
-#define sim_eprintf(fmt, args...) \
-  (void)fprintf(stderr, "ERROR simio " fmt " at %s:%d\n" , ##args , __FILE__, __LINE__)
-
 /* configure */
 extern void sim_getopt(int argc, char **argv);
 
