@@ -61,30 +61,14 @@
 #define PWM_OUTPUT_LEFT                 0x00000000
 
 
-#define PWM_OUTPUT_CENTER               0x00000010
-
-
-#define PWM_MCK_DIV_1                   0x00000000
-#define PWM_MCK_DIV_2                   0x00000100
-#define PWM_MCK_DIV_4                   0x00000200
-#define PWM_MCK_DIV_8                   0x00000300
-#define PWM_MCK_DIV_16                  0x00000400
-#define PWM_MCK_DIV_32                  0x00000500
-#define PWM_MCK_DIV_64                  0x00000600
-#define PWM_MCK_DIV_128                 0x00000700
-#define PWM_MCK_DIV_256                 0x00000800
-#define PWM_MCK_DIV_512                 0x00000900
-#define PWM_MCK_DIV_1024                0x00000A00
-#define PWM_MCK_DIV_CLKA                0x00000B00
-#define PWM_MCK_DIV_CLKB                0x00000C00
-
-#define PWM_OUTPUT_PIN1                 0x00001000
-#define PWM_OUTPUT_PIN2                 0x00002000
-#define PWM_OUTPUT_PIN3                 0x00004000
-
-#define PWM_DISABLEPULLUP_PIN1          0x00010000
-#define PWM_DISABLEPULLUP_PIN2          0x00020000
-#define PWM_DISABLEPULLUP_PIN3          0x00040000
+#define CC1E                            (1U << 0)
+#define CC1P                            (1U << 1)
+#define CC2E                            (1U << 2)
+#define CC2P                            (1U << 3)
+#define CC3E                            (1U << 4)
+#define CC3P                            (1U << 5)
+#define CC4E                            (1U << 6)
+#define CC4P                            (1U << 7)
 
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */

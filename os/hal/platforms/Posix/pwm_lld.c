@@ -83,7 +83,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
   pwm_lld_disable_channel(pwmp,0);
   mode = pwmp->config->channels[0].mode;
   uint32_t psc; 
-
+  uint16_t ccer;
   if (pwmp->state == PWM_STOP) {
     /* Enables the peripheral.*/
 #if PLATFORM_PWM_USE_PWM1
@@ -100,7 +100,40 @@ void pwm_lld_start(PWMDriver *pwmp) {
   pwmp->sim->PSC = (uint16_t)psc;
   pwmp->sim->ARR = (uint16_t)(pwmp->period - 1);
   pwmp->sim->CR2 = pwmp->config->cr2;
-   
+  pwmp->sim->CR1 = 1; 
+  ccer = 0; 
+  switch(pwmp->config->channels[0].mode & PWM_OUTPUT_MASK){
+      case PWM_OUTPUT_ACTIVE_LOW:
+        ccer |= CC1P;
+      case PWM_OUPPUT_ACTIVE_HIGH:
+        ccer |= CC1E;
+      default:
+          ;
+  }
+  switch(pwmp->config->channels[1].mode & PWM_OUTPUT_MASK){
+      case PWM_OUTPUT_ACTIVE_LOW:
+           ccer |= CC2P;
+      case PWM_OUPPUT_ACTIVE_HIGH:
+            ccer |= CC1E;
+      default:
+          ;
+  }
+  switch(pwmp->config->channels[2].mode & PWM_OUTPUT_MASK){
+      case PWM_OUTPUT_ACTIVE_LOW:
+          ccer |= CC3P;
+      case PWM_OUPPUT_ACTIVE_HIGH:
+          ccer |= CC3E;
+      default:
+          ;
+  }
+  switch(pwmp->config->channels[3].mode & PWM_OUTPUT_MASK){
+      case PWM_OUTPUT_ACTIVE_LOW:
+          ccer |= CC4P;
+      case PWM_OUPPUT_ACTIVE_HIGH:
+          ccer |= CC4E;
+      default:
+          ;
+  }
 
 
 }
@@ -119,7 +152,6 @@ void pwm_lld_stop(PWMDriver *pwmp) {
   if (pwmp->state == PWM_READY) {
     /* Resets the peripheral.*/
     pwmp->sim->CR1 = 0;
-    pwmp->sim->DIER = 0;
     pwmp->sim->SR = 0; 
     /* Disables the peripheral.*/
 #if PLATFORM_PWM_USE_PWM1
@@ -150,7 +182,13 @@ void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
 
   (void)pwmp;
   (void)period;
-
+   PWMD1->frequency = pwmp->frequency;
+   PWMD1->callback = pwmp->callback;
+   PWMD1->channels = pwmp->channels;
+   PWMD1->clock = pwmp->clock;
+   PWMD1->sim = pwmp->sim;
+   PWMD1->period = period; 
+   
 }
 
 /**
