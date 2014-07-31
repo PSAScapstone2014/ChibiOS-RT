@@ -49,7 +49,7 @@
  * @details If set to @p TRUE the support for PWM1 is included.
  */
 #if !defined(PLATFORM_PWM_USE_PWM1) || defined(__DOXYGEN__)
-#define PLATFORM_PWM_USE_PWM1               FALSE
+#define PLATFORM_PWM_USE_PWM1               TRUE
 #endif
 /** @} */
 
@@ -164,8 +164,6 @@ typedef struct {
    */
   PWMChannelConfig          channels[PWM_CHANNELS];
   /* End of the mandatory fields.*/
-  uint32_t                  clock;
-  sim_t                      *sim;
 } PWMConfig;
 
 
@@ -193,6 +191,8 @@ struct PWMDriver {
 #endif
   /* End of the mandatory fields.*/
 
+  sim_t                      *sim;
+  uint32_t                  clock;
 };
 
 /*===========================================================================*/
