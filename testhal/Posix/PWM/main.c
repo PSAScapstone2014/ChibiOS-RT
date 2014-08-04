@@ -32,7 +32,7 @@ static PWMConfig pwmcfg ={
             {PWM_OUTPUT_DISABLED, NULL}
     }
 };
-static void print_state()
+static print_state()
 {
     printf("PWM Width: %d \r\n", PWMD1.sim->CCR[0]);
     printf("PWM State: %d \r\n", PWMD1.state);
@@ -71,6 +71,8 @@ static msg_t dummy_1_thread(void *arg)
     }
     return -1;
 }
+
+
 /*
  * Application entry point.
  */
@@ -85,14 +87,17 @@ int main(void) {
    */
     int pwm_period = PWM_INIT;
     bool change = false;
+    int count = 0;
   halInit();
   chSysInit();
-  palSetPadMode(GPIOD,15, 1);
+  //Initialize pwm drivers
   pwmStart(&PWMD1,&pwmcfg);
-  pwm_lld_enable_channel(&PWMD1, 0, PWM_WIDTH);
+  palSetPadMode(GPIOD,15, 1);
+  pwmEnableChannel(&PWMD1, 0, PWM_WIDTH);
   //seg faults..
-//  chThdCreateStatic(dummy_1, sizeof(dummy_1), dummy_1_thread,NORMALPRIO ,NULL);
+ // chThdCreateStatic(dummy_1, sizeof(dummy_1), dummy_1_thread,NORMALPRIO ,NULL);
   chThdSleepMilliseconds(200);
+  //changes periods over time incrementing and decrementing
   while (TRUE) {
         if(change) {
             pwm_period += 1;
@@ -111,6 +116,15 @@ int main(void) {
        pwmChangePeriod(&PWMD1, pwm_period);
        chThdSleepMilliseconds(200);
        print_state();
+       count++;
+       if(count > 5)
+       {
+           break;
+       }
     chThdSleepMilliseconds(5000);
   }
+  //Disables the pwm driver 
+  pwmDisableChannel(&PWMD1, 0);
+  pwmStop(&PWMD1);
+  print_state();
 }
