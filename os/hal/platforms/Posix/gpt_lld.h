@@ -26,14 +26,19 @@
 #define _GPT_LLD_H_
 
 #include <sys/types.h>
-#include <time.h>
+#include <stdlib.h>       
+#include <stdio.h>       
 #include <signal.h>
+#include <time.h>
 
 #if HAL_USE_GPT || defined(__DOXYGEN__)
 
 /*===========================================================================*/
 /* Driver constants.                                                         */
 /*===========================================================================*/
+
+#define CLOCKID CLOCK_REALTIME
+#define SIG SIGRTMIN
 
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
@@ -117,9 +122,12 @@ struct GPTDriver {
   GPT_DRIVER_EXT_FIELDS
 #endif
   /* End of the mandatory fields.*/
-  /* Pointer to itimer and sigevent structures*/
-  struct itimerspec         *tmr;
-  struct sigevent           *sigev;
+  timer_t timerid;
+  struct sigevent sev;
+  struct itimerspec its;
+  long long freq_nanosecs;
+  sigset_t mask;
+  struct sigaction sa;
 };
 
 /*===========================================================================*/

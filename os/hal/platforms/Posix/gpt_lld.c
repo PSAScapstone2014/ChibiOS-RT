@@ -39,6 +39,10 @@
 /* Driver exported variables.                                                */
 /*===========================================================================*/
 
+#define CLOCKID CLOCK_REALTIME
+#define SIG SIGRTMIN
+
+
 /**
  * @brief   GPTD1 driver identifier.
  */
@@ -57,13 +61,48 @@
 /* Driver local variables and types.                                         
  */
 
-timer_t timer;
 /*===========================================================================*/
 
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 
+#define errExit(msg)    do { perror(msg); exit(EXIT_FAILURE); \
+                               } while (0)
+
+
+void establish_sighandler(GPTDriver *gptp) {
+  printf("Establishing handler for signal %d\n", SIG);
+  gptp->sa.sa_flags = SA_SIGINFO;
+  gptp->sa.sa_sigaction = 0;
+  sigemptyset(&(gptp->sa.sa_mask));
+  if (sigaction(SIG, &(gptp->sa), NULL) == -1)
+    errExit("sigaction");
+}
+
+void block(GPTDriver *gptp) {
+  printf("Blocking signal %d\n", SIG);
+  sigemptyset(&(gptp->mask));
+  sigaddset(&(gptp->mask), SIG);
+  if (sigprocmask(SIG_SETMASK, &(gptp->mask), NULL) == -1)
+    errExit("sigprocmask");
+}
+
+void unblock(GPTDriver *gptp) {
+  printf("Unblocking signal %d\n", SIG);
+  if (sigprocmask(SIG_UNBLOCK, &(gptp->mask), NULL) == -1)
+     errExit("sigprocmask");
+}
+
+static void handler(int sig, siginfo_t *si, void *uc) {
+/* Note: calling printf() from a signal handler is not
+   strictly correct, since printf() is not async-signal-safe;
+   see signal(7) */
+
+  printf("Caught signal %d\n", sig);
+  print_siginfo(si);
+  signal(sig, SIG_IGN);
+}
 /**
 * @brief Shared IRQ handler.
 *
@@ -97,14 +136,10 @@ timer_t timer;
 void gpt_lld_init(void) {
 
 #if POSIX_GPT_USE_GPT1
-  GPTD1.tmr = 0;
-  GPTD1.sigev = SIGEV_NONE;
   /* Driver initialization.*/
   gptObjectInit(&GPTD1);
 #endif
 #if POSIX_GPT_USE_GPT2
-  GPTD2.tmr = 0;
-  GPTD2.sigev = SIGEV_NONE;
   /* Driver initialization.*/
   gptObjectInit(&GPTD2);
 #endif
@@ -121,17 +156,32 @@ void gpt_lld_start(GPTDriver *gptp) {
   if (gptp->state == GPT_STOP) {
     /* Enables the peripheral.*/
 
+   block(gptp);
+   establish_sighandler(gptp);
 #if POSIX_GPT_USE_GPT1
-    if (&GPTD1 == gptp) {
-//      timer = timer_create(CLOCK_REALTIME, &gptp->sigev, &gptp->tmr);
-    }
+  if (&GPTD1 == gptp) {
+    gptp->sev.sigev_notify = SIGEV_SIGNAL;
+    gptp->sev.sigev_signo = SIG;
+    gptp->sev.sigev_value.sival_ptr = &(gptp->timerid);
+    if (timer_create(CLOCKID, &(gptp->sev), &(gptp->timerid)) == -1)
+      errExit("timer_create");
 
-    else if(&GPTD2 == gptp) {
-  //    timer = timer_create(CLOCK_REALTIME, &gptp->sigev, &gptp->tmr);
-    }
-
-#endif /* POSIX_GPT_USE_GPT1 */
+      printf("timer ID is 0x%lx\n", (long) gptp->timerid);
   }
+#endif /* POSIX_GPT_USE_GPT1 */
+#if POSIX_GPT_USE_GPT2
+  if (&GPTD2 == gptp) {
+    gptp->sev.sigev_notify = SIGEV_SIGNAL;
+    gptp->sev.sigev_signo = SIG;
+    gptp->sev.sigev_value.sival_ptr = &(gptp->timerid);
+    if (timer_create(CLOCKID, &(gptp->sev), &(gptp->timerid)) == -1)
+      errExit("timer_create");
+
+      printf("timer ID is 0x%lx\n", (long) gptp->timerid);
+  }
+#endif
+ }
+
   /* Configures the peripheral.*/
 
 }
@@ -152,13 +202,13 @@ void gpt_lld_stop(GPTDriver *gptp) {
     /* Disables the peripheral.*/
 #if POSIX_GPT_USE_GPT1
     if (&GPTD1 == gptp) {
-      //timer_delete(timer);
+      timer_delete((&gptp->timerid));
     }
 #endif /* POSIX_GPT_USE_GPT1 */
 
 #if POSIX_GPT_USE_GPT2
     if (&GPTD2 == gptp) {
-      //timer_delete(timer);
+      timer_delete((&gptp->timerid));
     }
 #endif /* POSIX_GPT_USE_GPT2 */
   }
@@ -176,10 +226,14 @@ void gpt_lld_start_timer(GPTDriver *gptp, gptcnt_t interval) {
 
   (void)gptp;
   (void)interval;
-  //gptp->tmr->it_value.tv_sec = interval / 1000000000;
-  //gptp->tmr->it_value.tv_nsec = interval % 100000000;
-  //gptp->tmr->it_interval.tv_sec = gptp->tmr->it_value.tv_sec;
-  //gptp->tmr->it_interval.tv_nsec = gptp->tmr->it_value.tv_nsec;
+  gptp->freq_nanosecs = interval;
+  gptp->its.it_value.tv_sec = gptp->freq_nanosecs / 1000000000;
+  gptp->its.it_value.tv_nsec = gptp->freq_nanosecs % 1000000000;
+  gptp->its.it_interval.tv_sec = gptp->its.it_value.tv_sec;
+  gptp->its.it_interval.tv_nsec = gptp->its.it_value.tv_nsec;
+
+  if (timer_settime(gptp->timerid, 0, &(gptp->its), NULL) == -1)
+    errExit("timer_settime");
 }
 
 /**
@@ -192,13 +246,13 @@ void gpt_lld_start_timer(GPTDriver *gptp, gptcnt_t interval) {
 void gpt_lld_stop_timer(GPTDriver *gptp) {
 
   (void)gptp;
-//  struct itimerspec *old_tmr = gptp->tmr;
-  //gptp->tmr->it_value.tv_sec = 0;
-  //gptp->tmr->it_value.tv_nsec = 0;
-  //gptp->tmr->it_interval.tv_sec = gptp->tmr->it_value.tv_sec;
-  //gptp->tmr->it_interval.tv_nsec = gptp->tmr->it_value.tv_nsec;
-  //const struct itimerspec *new_tmr = gptp->tmr;
-  //timer_settime(timer, TIMER_ABSTIME, &new_tmr, &old_tmr);
+  gptp->freq_nanosecs = 0;
+  gptp->its.it_value.tv_sec = gptp->freq_nanosecs / 1000000000;
+  gptp->its.it_value.tv_nsec = gptp->freq_nanosecs % 1000000000;
+  gptp->its.it_interval.tv_sec = gptp->its.it_value.tv_sec;
+  gptp->its.it_interval.tv_nsec = gptp->its.it_value.tv_nsec;
+  if (timer_settime(gptp->timerid, 0, &(gptp->its), NULL) == -1)
+    errExit("timer_settime");
 }
 
 /**
@@ -216,8 +270,9 @@ void gpt_lld_polled_delay(GPTDriver *gptp, gptcnt_t interval) {
 
   (void)gptp;
   (void)interval;
-  //unsigned int seconds = interval/sysconf(_SC_CLK_TCK);
-  //gptp.sleep(seconds);
+  block(gptp);
+  sleep(interval);
+  unblock(gptp);
 }
 
 #endif /* HAL_USE_GPT */
