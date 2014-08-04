@@ -67,7 +67,9 @@ static msg_t read_thread(void *arg) {
       chThdSleep(1000);
     }
     else if (nb > 0) {
-      if (channel < EXT_MAX_CHANNELS && extp->config->channels[channel].cb) {
+      if (channel < EXT_MAX_CHANNELS
+          && extp->channelsEnabled[channel]
+          && extp->config->channels[channel].cb) {
         CH_IRQ_PROLOGUE();
         extp->config->channels[channel].cb(extp, channel);
         CH_IRQ_EPILOGUE();
@@ -102,11 +104,14 @@ void ext_lld_init(void) {
  * @notapi
  */
 void ext_lld_start(EXTDriver *extp) {
+  int i;
 
   if (extp->state == EXT_STOP) {
 
     /* Enables the peripheral.*/
     extp->state = EXT_ACTIVE;
+    for (i = 0; i < EXT_MAX_CHANNELS; i++)
+      extp->channelsEnabled[i] = TRUE;
 
     sim_connect(EXT_IO);
     rthd = chThdCreateI(wsp, sizeof(wsp), NORMALPRIO, read_thread, (void*)extp);
@@ -144,8 +149,7 @@ void ext_lld_stop(EXTDriver *extp) {
  * @notapi
  */
 void ext_lld_channel_enable(EXTDriver *extp, expchannel_t channel) {
-  (void)extp;
-  (void)channel;
+  extp->channelsEnabled[channel] = TRUE;
 }
 
 /**
@@ -157,8 +161,7 @@ void ext_lld_channel_enable(EXTDriver *extp, expchannel_t channel) {
  * @notapi
  */
 void ext_lld_channel_disable(EXTDriver *extp, expchannel_t channel) {
-  (void)extp;
-  (void)channel;
+  extp->channelsEnabled[channel] = FALSE;
 }
 
 #endif /* HAL_USE_EXT */

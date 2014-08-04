@@ -51,6 +51,8 @@ RTCDriver RTCD1;
 /*===========================================================================*/
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
+static WORKING_AREA(wsp, 128);
+static Thread *athd;
 
 /*===========================================================================*/
 /* Driver local functions.                                                   */
@@ -112,11 +114,34 @@ void rtc_lld_get_time(RTCDriver *rtcp, RTCTime *timespec) {
   gettimeofday((struct timeval*)timespec, NULL);
 }
 
+/**
+ * @brief   Callback for rtc_lld_set_alarm()
+ *
+ * @notapi
+ */
 void rtd_lld_alarm_do_callback(int signal) {
   (void)signal;
-  dbg_check_enter_isr();
-  RTCD1.callback(&RTCD1, RTC_EVENT_ALARM); /* TODO: RTC_EVENT_SECOND */
-  dbg_check_leave_isr();
+  if (RTCD1.callback) {
+    CH_IRQ_PROLOGUE();
+    RTCD1.callback(&RTCD1, RTC_EVENT_ALARM);
+    CH_IRQ_EPILOGUE();
+  }
+}
+
+/**
+ * @brief   Signal every second
+ *
+ * @notapi
+ */
+static msg_t alarm_thread(void *arg) {
+  while (TRUE) {
+    chThdSleep(1000);
+    if (RTCD1.callback) {
+      CH_IRQ_PROLOGUE();
+      RTCD1.callback(&RTCD1, RTC_EVENT_SECOND);
+      CH_IRQ_EPILOGUE();
+    }
+  }
 }
 
 /**
@@ -182,6 +207,12 @@ void rtc_lld_get_alarm(RTCDriver *rtcp,
  */
 void rtc_lld_set_callback(RTCDriver *rtcp, rtccb_t callback) {
     rtcp->callback = callback;
+
+    /* spawn thread that signals once per second */
+    if (!athd) {
+      athd = chThdCreateI(wsp, sizeof(wsp), NORMALPRIO, alarm_thread, NULL);
+      chSchWakeupS(athd, RDY_OK);
+    }
 }
 
 #include "chrtclib.h"

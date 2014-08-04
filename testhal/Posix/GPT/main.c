@@ -33,20 +33,19 @@ static void gpt2cb(GPTDriver *gptp) {
 /*
 * GPT1 callback.
 */
-/*static void gpt1cb(GPTDriver *gptp) {
+static void gpt1cb(GPTDriver *gptp) {
 
   (void)gptp;
   palClearPad(GPIOD, GPIOD_LED5);
-}*/
+}
 
 /*
 * GPT1 configuration.
 */
-/*static const GPTConfig gpt1cfg = {
-  10000, *//* 10kHz timer clock.*/
-  //gpt1cb, /* Timer callback.*/
-  //0
-//};
+static const GPTConfig gpt1cfg = {
+  10000, /* 10kHz timer clock.*/
+  gpt1cb, /* Timer callback.*/
+};
 
 /*
 * GPT2 configuration.
@@ -54,7 +53,6 @@ static void gpt2cb(GPTDriver *gptp) {
 static const GPTConfig gpt2cfg = {
   10000, /* 10kHz timer clock.*/
   gpt2cb /* Timer callback.*/
-  //0
 };
 
 /*
@@ -75,8 +73,8 @@ int main(void) {
   /*
 * Initializes the GPT drivers 2 and 3.
 */
-  //gptStart(&GPTD1, &gpt1cfg);
-  //gptPolledDelay(&GPTD1, 10); /* Small delay.*/
+  gptStart(&GPTD1, &gpt1cfg);
+  gptPolledDelay(&GPTD1, 10); /* Small delay.*/
   gptStart(&GPTD2, &gpt2cfg);
   gptPolledDelay(&GPTD2, 10); /* Small delay.*/
 

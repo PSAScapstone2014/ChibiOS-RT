@@ -118,6 +118,8 @@ struct EXTDriver {
    */
   const EXTConfig           *config;
   /* End of the mandatory fields.*/
+
+  bool                      channelsEnabled[EXT_MAX_CHANNELS];
 };
 
 /*===========================================================================*/

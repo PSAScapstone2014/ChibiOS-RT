@@ -120,7 +120,7 @@ ifeq ($(HOST_OSX),yes)
 else
   # Linux, or other
   CPFLAGS += -m32 -Wa,-alms=$(<:.c=.lst)
-  LDFLAGS = -m32 -Wl,-Map=$(PROJECT).map,--cref,--no-warn-mismatch $(LIBDIR)
+  LDFLAGS = -lrt -m32 -Wl,-Map=$(PROJECT).map,--cref,--no-warn-mismatch $(LIBDIR)
 endif
 
 # Generate dependency information
