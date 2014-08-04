@@ -92,7 +92,7 @@ typedef uint8_t pwmchannel_t;
  * @brief   PWM counter type.
  */
 typedef uint16_t pwmcnt_t;
-
+//copy of tim registers block
 typedef struct {
   uint32_t     CR1;
   uint32_t     CR2;
@@ -192,6 +192,7 @@ struct PWMDriver {
   /* End of the mandatory fields.*/
 
   sim_t                      *sim;
+  //Timer base clock
   uint32_t                  clock;
 };
 

@@ -24,6 +24,8 @@
 
 #include "ch.h"
 #include "hal.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 #if HAL_USE_PWM || defined(__DOXYGEN__)
 
@@ -68,7 +70,9 @@ void pwm_lld_init(void) {
 #if PLATFORM_PWM_USE_PWM1
   /* Driver initialization.*/
   pwmObjectInit(&PWMD1);
-  
+  //allocate the sim 
+    PWMD1.sim = malloc(sizeof(PWMD1.sim)+1);
+    PWMD1.clock = 1000000;
 #endif /* PLATFORM_PWM_USE_PWM1 */
 }
 
@@ -80,14 +84,15 @@ void pwm_lld_init(void) {
  * @notapi
  */
 void pwm_lld_start(PWMDriver *pwmp) {
-  pwm_lld_disable_channel(pwmp,0);
   uint32_t psc; 
   uint16_t ccer;
+  
   if (pwmp->state == PWM_STOP) {
     /* Enables the peripheral.*/
 #if PLATFORM_PWM_USE_PWM1
     if (&PWMD1 == pwmp) {
         
+
     }
 #endif /* PLATFORM_PWM_USE_PWM1 */
   }
@@ -134,7 +139,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
           ;
   }
 
-
+    printf("pwm driver start\n");
 }
 
 /**
@@ -156,9 +161,11 @@ void pwm_lld_stop(PWMDriver *pwmp) {
 #if PLATFORM_PWM_USE_PWM1
     if (&PWMD1 == pwmp) {
 
+        free(pwmp->sim);
     }
 #endif /* PLATFORM_PWM_USE_PWM1 */
   }
+
 }
 
 /**
@@ -181,10 +188,8 @@ void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
 
   (void)pwmp;
   (void)period;
-   PWMD1.state =pwmp->state;
-   PWMD1.clock = pwmp->clock;
-   PWMD1.sim = pwmp->sim;
-   PWMD1.period = period; 
+  
+   pwmp->period = period; 
    
 }
 
