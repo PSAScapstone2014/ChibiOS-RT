@@ -43,7 +43,7 @@ static int spin_poll(systime_t timeout, int fd) {
     }
   }
 
-  /* shouldn't happen */
+  /* timeout */
   return -1;
 }
 
