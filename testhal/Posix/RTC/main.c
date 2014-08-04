@@ -70,7 +70,7 @@ static void my_cb(RTCDriver *rtcp, rtcevent_t event) {
     palTogglePad(GPIOC, GPIOC_LED);
     break;
   case RTC_EVENT_SECOND:
-    /* palTogglePad(GPIOC, GPIOC_LED); */
+    palTogglePad(GPIOB, GPIOC_LED);
     break;
   case RTC_EVENT_ALARM:
     palTogglePad(GPIOC, GPIOC_LED);
@@ -101,14 +101,21 @@ int main(void) {
     /* Wait until alarm callback signaled semaphore.*/
     status = chBSemWaitTimeout(&alarm_sem, S2ST(RTC_ALARMPERIOD + 5));
 
-    if (status == RDY_TIMEOUT){
-      chSysHalt();
+    if (status == RDY_TIMEOUT)
+      chSysHalt(); /* doesn't return */
+
+
+    rtcGetTime(&RTCD1, &timespec);
+    alarmspec.tv_sec = timespec.tv_sec + RTC_ALARMPERIOD;
+    rtcSetAlarm(&RTCD1, 0, &alarmspec);
+
+    /* toggle the cb occasionally */
+    if (timespec.tv_sec % 2 == 0) {
+      rtcSetCallback(&RTCD1, NULL);
+      chThdSleep(2000);
+      rtcSetCallback(&RTCD1, my_cb);
     }
-    else{
-      rtcGetTime(&RTCD1, &timespec);
-      alarmspec.tv_sec = timespec.tv_sec + RTC_ALARMPERIOD;
-      rtcSetAlarm(&RTCD1, 0, &alarmspec);
-    }
+
   }
   return 0;
 }
