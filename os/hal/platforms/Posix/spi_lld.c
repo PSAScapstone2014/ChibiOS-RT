@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include "ch.h"
 #include "hal.h"
+#include "simio.h"
 
 #if HAL_USE_SPI || defined(__DOXYGEN__)
 
@@ -54,32 +55,28 @@ static uint16_t selectedSlave = 0;
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 static void setSlave(uint16_t sspad) {
-	selectedSlave = sspad;
+  selectedSlave = sspad;
 }
 
 static void receiveData(size_t n, void *rxbuf) {
-	char inBuffer[n + 1];
-	fgets(inBuffer, n, stdin);
-	strcpy(rxbuf, inBuffer);
+  chSysUnlock();
+  sim_read(SPI_IO, rxbuf, n);
+  chSysLock();
 }
 
 static void sendData(size_t n, void const *txbuf) {
-	char outBuffer [n + 1];
-	strcpy(outBuffer, txbuf);
-	printf("to device (%i): %.*s\n", selectedSlave, n, outBuffer);
+  sim_write(SPI_IO, (void*)txbuf, n);
 }
 
 static uint16_t polledExchange(uint16_t frame) {
-	char outBuffer [6];
-	char inBuffer [6];
-	uint16_t inFrame;
-	sprintf(outBuffer, "%i", frame);
-	printf("to device (%i): %s\n", selectedSlave, outBuffer);
-	
-	fgets(inBuffer, 5, stdin);
-	inFrame = atoi(inBuffer);
-	
-	return inFrame;
+  uint16_t inFrame;
+
+  sim_write(SPI_IO, &frame, sizeof frame);
+  printf("to device (%hu): %hu\n", selectedSlave, frame);
+
+  sim_read(SPI_IO, &inFrame, sizeof inFrame);
+
+  return inFrame;
 }
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
@@ -167,6 +164,7 @@ void spi_lld_select(SPIDriver *spip) {
  */
 void spi_lld_unselect(SPIDriver *spip) {
 
+  (void)spip;
   setSlave(NO_SLAVE_SET);
 
 }
@@ -184,8 +182,8 @@ void spi_lld_unselect(SPIDriver *spip) {
  */
 void spi_lld_ignore(SPIDriver *spip, size_t n) {
 
-  (void)spip;
   (void)n;
+  spip->state = SPI_READY;
 
 }
 
@@ -209,6 +207,7 @@ void spi_lld_exchange(SPIDriver *spip, size_t n,
 
   receiveData(n, rxbuf);
   sendData(n, txbuf);
+  spip->state = SPI_READY;
 
 }
 
@@ -228,6 +227,7 @@ void spi_lld_exchange(SPIDriver *spip, size_t n,
 void spi_lld_send(SPIDriver *spip, size_t n, const void *txbuf) {
 
   sendData(n, txbuf);
+  spip->state = SPI_READY;
 
 }
 
@@ -247,6 +247,7 @@ void spi_lld_send(SPIDriver *spip, size_t n, const void *txbuf) {
 void spi_lld_receive(SPIDriver *spip, size_t n, void *rxbuf) {
 
   receiveData(n, rxbuf);
+  spip->state = SPI_READY;
 
 }
 
@@ -263,7 +264,10 @@ void spi_lld_receive(SPIDriver *spip, size_t n, void *rxbuf) {
  * @return              The received data frame from the SPI bus.
  */
 uint16_t spi_lld_polled_exchange(SPIDriver *spip, uint16_t frame) {
+
+  (void)spip;
   return polledExchange(frame);
+
 }
 
 #endif /* HAL_USE_SPI */

@@ -27,6 +27,7 @@ static struct sim_host_t {
   {"127.0.0.1", 27010}, /* SD1_IO */
   {"127.0.0.1", 27011}, /* SD2_IO */
   {"127.0.0.1", 27020}, /* EXT_IO */
+  {"127.0.0.1", 27030}, /* SPI_IO */
 };
 
 /* accept threads and output fds for each HAL */
@@ -52,6 +53,9 @@ extern void sim_getopt(int argc, char **argv) {
     {"ext_host", required_argument, NULL, 'd'},
     {"ext_port", required_argument, NULL, 'D'},
 
+    {"spi_host", required_argument, NULL, 'e'},
+    {"spi_port", required_argument, NULL, 'E'},
+
     {NULL,              0,                 NULL,  0 }
   };
 
@@ -70,6 +74,9 @@ extern void sim_getopt(int argc, char **argv) {
 
       case 'd': sim_host[EXT_IO].ip_addr = strdup(optarg); break;
       case 'D': sim_host[EXT_IO].port = atoi(optarg); break;
+
+      case 'e': sim_host[EXT_IO].ip_addr = strdup(optarg); break;
+      case 'E': sim_host[EXT_IO].port = atoi(optarg); break;
 
       default:
         eprintf("usage: %s <options>", argv[0]); /* ToDo: option list help */
@@ -91,6 +98,8 @@ static char* hid2str(sim_hal_id_t hid) {
       return "SD2_IO";
     case EXT_IO:
       return "EXT_IO";
+    case SPI_IO:
+      return "SPI_IO";
     default:
       return "UNK_IO";
   }
