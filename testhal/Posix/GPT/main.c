@@ -74,19 +74,24 @@ int main(void) {
 * Initializes the GPT drivers 2 and 3.
 */
   gptStart(&GPTD1, &gpt1cfg);
+  printf("Finished gptStartD1\n");
   gptPolledDelay(&GPTD1, 10); /* Small delay.*/
+  printf("Finished polledDelay1\n");
   gptStart(&GPTD2, &gpt2cfg);
+  printf("GPTD2 start\n");
   gptPolledDelay(&GPTD2, 10); /* Small delay.*/
+  printf("polledDelay2\n");
 
   /*
 * Normal main() thread activity, it changes the GPT1 period every
 * five seconds.
 */
   while (TRUE) {
+    printf("TRUE\n");
     palSetPad(GPIOD, GPIOD_LED4);
-    gptStartContinuous(&GPTD2, 5000);
+    gptStartContinuous(&GPTD1, 5000);
     chThdSleepMilliseconds(5000);
-    gptStopTimer(&GPTD2);
+    gptStopTimer(&GPTD1);
     palClearPad(GPIOD, GPIOD_LED4);
     gptStartContinuous(&GPTD2, 2500);
     chThdSleepMilliseconds(5000);
