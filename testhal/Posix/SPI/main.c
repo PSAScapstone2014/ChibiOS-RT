@@ -19,11 +19,11 @@
 #include "hal.h"
 
 static const SPIConfig spicfg = {
-		NULL,
-		0,
-		1,
-		0,
-		0
+  NULL,
+  0,
+  1,
+  0,
+  0
 };
 
 static uint64_t txbuf[512];
@@ -43,7 +43,7 @@ int main(void) {
    */
   halInit();
   chSysInit();
-  
+
   spiStart(&SPID1, &spicfg);
   spiSelect(&SPID1);
   spiStartReceive(&SPID1, 512, rxbuf);
@@ -54,11 +54,11 @@ int main(void) {
    * echo it to standard out.
    */
   while (TRUE) {
-	  chThdSleepMilliseconds(500);
-	  spiStartReceive(&SPID1, 512, rxbuf);
-	  spiStartSend(&SPID1, 512, rxbuf);
+    chThdSleepMilliseconds(500);
+    spiStartReceive(&SPID1, 512, rxbuf);
+    spiStartSend(&SPID1, 512, rxbuf);
   }
-  
+
   return 0;
 
 }
