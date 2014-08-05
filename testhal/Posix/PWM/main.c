@@ -34,13 +34,12 @@ static PWMConfig pwmcfg ={
 };
 static print_state()
 {
-    printf("PWM Width: %d \r\n", PWMD1.sim->CCR[0]);
+    printf("PWM Width: %d \r\n", PWMD1.width[0]);
     printf("PWM State: %d \r\n", PWMD1.state);
     printf("PWM Clock: %d \r\n", PWMD1.clock);
     printf("PWM Period: %d \r\n",PWMD1.period);
     printf("PWM Frequency: %d \r\n", PWMD1.config->frequency);
-    printf("PWM psc: %d \r\n\n", (PWMD1.clock/PWMD1.config->frequency)-1);
-
+    printf("PWM psc: %d \r\n\n", PWMD1.psc);
 }
 static WORKING_AREA(led, 128);
 static msg_t dummy_led(void *arg)

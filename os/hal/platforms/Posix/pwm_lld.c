@@ -71,7 +71,6 @@ void pwm_lld_init(void) {
   /* Driver initialization.*/
   pwmObjectInit(&PWMD1);
   //allocate the sim 
-    PWMD1.sim = malloc(sizeof(PWMD1.sim)+1);
     PWMD1.clock = 1000000;
 #endif /* PLATFORM_PWM_USE_PWM1 */
 }
@@ -84,8 +83,6 @@ void pwm_lld_init(void) {
  * @notapi
  */
 void pwm_lld_start(PWMDriver *pwmp) {
-  uint32_t psc; 
-  uint16_t ccer;
   
   if (pwmp->state == PWM_STOP) {
     /* Enables the peripheral.*/
@@ -97,48 +94,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
 #endif /* PLATFORM_PWM_USE_PWM1 */
   }
   /* Configures the peripheral.*/
-  psc = (pwmp->clock / pwmp->config->frequency) - 1;
-  chDbgAssert((psc <= 0xFFFF) && ((psc + 1) * pwmp->config->frequency) == pwmp->clock, 
-          "pwm_lld_start(), #1", "invalid frequency");
-
-  pwmp->sim->PSC = (uint16_t)psc;
-  pwmp->sim->ARR = (uint16_t)(pwmp->period - 1);
-  pwmp->sim->CR2 = 1;
-  pwmp->sim->CR1 = 1; 
-  ccer = 0; 
-  switch(pwmp->config->channels[0].mode & PWM_OUTPUT_MASK){
-      case PWM_OUTPUT_ACTIVE_LOW:
-        ccer |= CC1P;
-      case PWM_OUTPUT_ACTIVE_HIGH:
-        ccer |= CC1E;
-      default:
-          ;
-  }
-  switch(pwmp->config->channels[1].mode & PWM_OUTPUT_MASK){
-      case PWM_OUTPUT_ACTIVE_LOW:
-           ccer |= CC2P;
-      case PWM_OUTPUT_ACTIVE_HIGH:
-            ccer |= CC1E;
-      default:
-          ;
-  }
-  switch(pwmp->config->channels[2].mode & PWM_OUTPUT_MASK){
-      case PWM_OUTPUT_ACTIVE_LOW:
-          ccer |= CC3P;
-      case PWM_OUTPUT_ACTIVE_HIGH:
-          ccer |= CC3E;
-      default:
-          ;
-  }
-  switch(pwmp->config->channels[3].mode & PWM_OUTPUT_MASK){
-      case PWM_OUTPUT_ACTIVE_LOW:
-          ccer |= CC4P;
-      case PWM_OUTPUT_ACTIVE_HIGH:
-          ccer |= CC4E;
-      default:
-          ;
-  }
-
+  pwmp->psc = (pwmp->clock/pwmp->config->frequency)-1;
 }
 
 /**
@@ -151,20 +107,18 @@ void pwm_lld_start(PWMDriver *pwmp) {
 
 //emulate pins..
 void pwm_lld_stop(PWMDriver *pwmp) {
-
+  uint32_t psc;
   if (pwmp->state == PWM_READY) {
     /* Resets the peripheral.*/
-    pwmp->sim->CR1 = 0;
-    pwmp->sim->SR = 0; 
     /* Disables the peripheral.*/
 #if PLATFORM_PWM_USE_PWM1
     if (&PWMD1 == pwmp) {
 
-        free(pwmp->sim);
     }
 #endif /* PLATFORM_PWM_USE_PWM1 */
   }
-
+ psc = (pwmp->clock/pwmp->config->frequency)-1;
+ pwmp->psc = psc;
 }
 
 /**
@@ -184,14 +138,12 @@ void pwm_lld_stop(PWMDriver *pwmp) {
  * @notapi
  */
 void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
-CH_IRQ_PROLOGUE();
   (void)pwmp;
   (void)period;
   
-chDbgCheck(pwmp->state == PWM_READY, 
+   chDbgCheck(pwmp->state != PWM_READY, 
                 "PWM not started");
    pwmp->period = period; 
-   CH_IRQ_EPILOGUE();
 }
 
 /**
@@ -212,13 +164,11 @@ void pwm_lld_enable_channel(PWMDriver *pwmp,
                             pwmchannel_t channel,
                             pwmcnt_t width) {
 
-CH_IRQ_PROLOGUE();
   (void)pwmp;
   (void)channel;
   (void)width;
-  pwmp->sim->CCR[channel] = width; 
+  pwmp->width[channel] = width; 
 
-   CH_IRQ_EPILOGUE();
  
 }
 
@@ -238,12 +188,10 @@ CH_IRQ_PROLOGUE();
  */
 void pwm_lld_disable_channel(PWMDriver *pwmp, pwmchannel_t channel) {
 
-CH_IRQ_PROLOGUE();
   (void)pwmp;
   (void)channel;
-  pwmp->sim->CCR[channel] = 0; 
+  pwmp->width[channel] = 0; 
 
-   CH_IRQ_EPILOGUE();
 
 }
 

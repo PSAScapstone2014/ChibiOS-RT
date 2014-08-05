@@ -61,14 +61,6 @@
 #define PWM_OUTPUT_LEFT                 0x00000000
 
 
-#define CC1E                            (1U << 0)
-#define CC1P                            (1U << 1)
-#define CC2E                            (1U << 2)
-#define CC2P                            (1U << 3)
-#define CC3E                            (1U << 4)
-#define CC3P                            (1U << 5)
-#define CC4E                            (1U << 6)
-#define CC4P                            (1U << 7)
 
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
@@ -93,29 +85,6 @@ typedef uint8_t pwmchannel_t;
  */
 typedef uint16_t pwmcnt_t;
 //copy of tim registers block
-typedef struct {
-  uint32_t     CR1;
-  uint32_t     CR2;
-  uint32_t     SMCR;
-  uint32_t     DIER;
-  uint32_t     SR;
-  uint32_t     EGR;
-  uint32_t     CCMR1;
-  uint32_t     CCMR2;
-  uint32_t     CCER;
-  uint32_t     CNT;
-  uint32_t     PSC;
-  uint32_t     ARR;
-  uint32_t     RCR;
-  uint32_t     CCR[4];
-  uint32_t     BDTR;
-  uint32_t     DCR;
-  uint32_t     DMAR;
-  uint32_t     OR;
-  uint32_t     CCMR3;
-  uint32_t     CCR5;
-  uint32_t     CCR6;
-} sim_t;
 /**
  * @brief   PWM driver channel configuration structure.
  * @note    Some architectures may not be able to support the channel mode
@@ -190,10 +159,11 @@ struct PWMDriver {
   PWM_DRIVER_EXT_FIELDS
 #endif
   /* End of the mandatory fields.*/
-
-  sim_t                      *sim;
+  //width channels 
+  uint32_t                  width[PWM_CHANNELS];
   //Timer base clock
   uint32_t                  clock;
+  uint32_t                  psc; 
 };
 
 /*===========================================================================*/
