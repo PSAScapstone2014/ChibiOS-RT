@@ -88,11 +88,12 @@ int main(void) {
 */
   while (TRUE) {
     printf("TRUE\n");
-    palSetPad(GPIOD, GPIOD_LED4);
+    //palSetPad(GPIOD, GPIOD_LED4);
+    //printf("Turn on LED\n");
     gptStartContinuous(&GPTD1, 5000);
     chThdSleepMilliseconds(5000);
     gptStopTimer(&GPTD1);
-    palClearPad(GPIOD, GPIOD_LED4);
+    //palClearPad(GPIOD, GPIOD_LED4);
     gptStartContinuous(&GPTD2, 2500);
     chThdSleepMilliseconds(5000);
     gptStopTimer(&GPTD2);
