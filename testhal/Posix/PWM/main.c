@@ -20,7 +20,7 @@
 #include "hal.h"
 
 #define PWM_INIT 4000
-#define PWM_WIDTH 40000
+#define PWM_WIDTH 400
 static PWMConfig pwmcfg ={ 
     10000,
     PWM_INIT,
@@ -42,11 +42,24 @@ static print_state()
     printf("PWM psc: %d \r\n\n", (PWMD1.clock/PWMD1.config->frequency)-1);
 
 }
-static WORKING_AREA(dummy_1, 128);
-static msg_t dummy_1_thread(void *arg)
+static WORKING_AREA(led, 128);
+static msg_t dummy_led(void *arg)
+{
+    (void)arg;
+    chRegSetThreadName("blinker");
+    while(TRUE)
+    {
+        palTogglePad(GPIOC,GPIOC_LED);
+            chThdSleepMilliseconds(500);
+    }
+    return -1;
+}
+static WORKING_AREA(dummy_pwm, 128);
+static msg_t dummy_pwm_thread(void *arg)
 {
     int pwm_period = PWM_INIT;
     bool change = false;
+    (void)arg; 
     chRegSetThreadName("pwm_test");
     while(TRUE)
     {
@@ -65,7 +78,7 @@ static msg_t dummy_1_thread(void *arg)
            change = true;
        }
        pwmChangePeriod(&PWMD1, pwm_period);
-       chThdSleepMilliseconds(200);
+       chThdSleepMilliseconds(2000);
        print_state();
 
     }
@@ -94,33 +107,11 @@ int main(void) {
   pwmStart(&PWMD1,&pwmcfg);
   palSetPadMode(GPIOD,15, 1);
   pwmEnableChannel(&PWMD1, 0, PWM_WIDTH);
-  //seg faults..
- // chThdCreateStatic(dummy_1, sizeof(dummy_1), dummy_1_thread,NORMALPRIO ,NULL);
+  chThdCreateStatic(led, sizeof(led),NORMALPRIO,dummy_led, NULL);
+  chThdCreateStatic(dummy_pwm, sizeof(dummy_pwm), NORMALPRIO ,dummy_pwm_thread,NULL);
   chThdSleepMilliseconds(200);
   //changes periods over time incrementing and decrementing
   while (TRUE) {
-        if(change) {
-            pwm_period += 1;
-        }
-        else
-        {
-            pwm_period -=1;
-        }
-       if(pwm_period > (PWM_INIT *0.5)) {
-           change = false;
-       }
-       if(pwm_period < (PWM_WIDTH +1))
-       {
-           change = true;
-       }
-       pwmChangePeriod(&PWMD1, pwm_period);
-       chThdSleepMilliseconds(200);
-       print_state();
-       count++;
-       if(count > 5)
-       {
-           break;
-       }
     chThdSleepMilliseconds(5000);
   }
   //Disables the pwm driver 

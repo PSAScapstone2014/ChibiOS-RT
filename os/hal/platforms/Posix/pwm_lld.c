@@ -139,7 +139,6 @@ void pwm_lld_start(PWMDriver *pwmp) {
           ;
   }
 
-    printf("pwm driver start\n");
 }
 
 /**
@@ -185,12 +184,14 @@ void pwm_lld_stop(PWMDriver *pwmp) {
  * @notapi
  */
 void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
-
+CH_IRQ_PROLOGUE();
   (void)pwmp;
   (void)period;
   
+chDbgCheck(pwmp->state == PWM_READY, 
+                "PWM not started");
    pwmp->period = period; 
-   
+   CH_IRQ_EPILOGUE();
 }
 
 /**
@@ -211,11 +212,13 @@ void pwm_lld_enable_channel(PWMDriver *pwmp,
                             pwmchannel_t channel,
                             pwmcnt_t width) {
 
+CH_IRQ_PROLOGUE();
   (void)pwmp;
   (void)channel;
   (void)width;
   pwmp->sim->CCR[channel] = width; 
 
+   CH_IRQ_EPILOGUE();
  
 }
 
@@ -235,10 +238,12 @@ void pwm_lld_enable_channel(PWMDriver *pwmp,
  */
 void pwm_lld_disable_channel(PWMDriver *pwmp, pwmchannel_t channel) {
 
+CH_IRQ_PROLOGUE();
   (void)pwmp;
   (void)channel;
   pwmp->sim->CCR[channel] = 0; 
 
+   CH_IRQ_EPILOGUE();
 
 }
 
