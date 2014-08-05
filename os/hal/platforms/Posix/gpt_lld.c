@@ -94,15 +94,6 @@ void unblock(GPTDriver *gptp) {
      errExit("sigprocmask");
 }
 
-static void handler(int sig, siginfo_t *si, void *uc) {
-/* Note: calling printf() from a signal handler is not
-   strictly correct, since printf() is not async-signal-safe;
-   see signal(7) */
-
-  printf("Caught signal %d\n", sig);
-  print_siginfo(si);
-  signal(sig, SIG_IGN);
-}
 /**
 * @brief Shared IRQ handler.
 *
@@ -156,9 +147,9 @@ void gpt_lld_start(GPTDriver *gptp) {
   if (gptp->state == GPT_STOP) {
     /* Enables the peripheral.*/
 
-   block(gptp);
-   establish_sighandler(gptp);
 #if POSIX_GPT_USE_GPT1
+  block(gptp);
+  establish_sighandler(gptp);
   if (&GPTD1 == gptp) {
     gptp->sev.sigev_notify = SIGEV_SIGNAL;
     gptp->sev.sigev_signo = SIG;
@@ -170,6 +161,8 @@ void gpt_lld_start(GPTDriver *gptp) {
   }
 #endif /* POSIX_GPT_USE_GPT1 */
 #if POSIX_GPT_USE_GPT2
+  block(gptp);
+  establish_sighandler(gptp);
   if (&GPTD2 == gptp) {
     gptp->sev.sigev_notify = SIGEV_SIGNAL;
     gptp->sev.sigev_signo = SIG;
@@ -226,6 +219,7 @@ void gpt_lld_start_timer(GPTDriver *gptp, gptcnt_t interval) {
 
   (void)gptp;
   (void)interval;
+  unblock(gptp);
   gptp->freq_nanosecs = interval;
   gptp->its.it_value.tv_sec = gptp->freq_nanosecs / 1000000000;
   gptp->its.it_value.tv_nsec = gptp->freq_nanosecs % 1000000000;
@@ -246,6 +240,7 @@ void gpt_lld_start_timer(GPTDriver *gptp, gptcnt_t interval) {
 void gpt_lld_stop_timer(GPTDriver *gptp) {
 
   (void)gptp;
+  block(gptp);
   gptp->freq_nanosecs = 0;
   gptp->its.it_value.tv_sec = gptp->freq_nanosecs / 1000000000;
   gptp->its.it_value.tv_nsec = gptp->freq_nanosecs % 1000000000;
@@ -271,6 +266,7 @@ void gpt_lld_polled_delay(GPTDriver *gptp, gptcnt_t interval) {
   (void)gptp;
   (void)interval;
   block(gptp);
+  printf("Going to sleep for: %d \n", interval);
   sleep(interval);
   unblock(gptp);
 }

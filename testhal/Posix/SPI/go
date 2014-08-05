@@ -1,0 +1,6 @@
+#!/bin/bash
+
+trap "kill %1" EXIT
+
+./ch &
+nc -kvl 27030

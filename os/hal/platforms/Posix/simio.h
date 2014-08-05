@@ -13,6 +13,7 @@ typedef enum {
   SD1_IO,
   SD2_IO,
   EXT_IO,
+  SPI_IO,
 } sim_hal_id_t;
 
 typedef void (*simio_cb_t)(char *buf, void *arg);
