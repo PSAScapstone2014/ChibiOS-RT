@@ -26,56 +26,62 @@
 
 /**
  * @file    simio.h
- * @brief   Simulator macros and data structures.
+ * @brief   Helper macros and data structures.
  *
- * @addtogroup SIMIO
+ * @addtogroup SIMUTIL
  * @{
  */
 
-#ifndef SIMIO_H
-#define SIMIO_H
+#ifndef SIMUTIL_H
+#define SIMUTIL_H
 
 #include <stdio.h>
-#include "ch.h"
 
-/* data buffer size for sim_printf */
-#define SIM_PRINTF_MAX 1024
+/**
+ * @brief console errors
+ *
+ * @notapi
+ */
+#define eprintf(fmt, args...) \
+  (void)fprintf(stderr, "ERROR simio " fmt " at %s:%d\n" , ##args , __FILE__, __LINE__)
 
-/* maximum pending reads/writes */
-#define MB_QUEUE_SIZE 10
+#define MSG_BLOCK_SIZE 256
+#define DUMMY_HEADER "XXXXXX_XX -1234567890"
 
-/*  */
+/**
+ * @brief io message data
+ */
+typedef struct {
+  char          *data;
+  char          *dptr;
+  size_t        dsz;
+  size_t        dlen;
+} sim_buf_t;
+
 typedef enum {
-  SIM_IO,   /* Do not initialize the first element to anything other than 0 */
-  PAL_IO,
-  SD1_IO,
-  SD2_IO,
-  EXT_IO,
-  SPI_IO,
-  HID_COUNT /* HID_COUNT must be last */
-} hid_t;
+  ST_HEADER,
+  ST_DATA
+} sim_state_t;
 
 typedef struct {
-  hid_t     id;
-  uint32_t  sid;
-} sim_hal_id_t;
+  sim_state_t state;
+  char        header[sizeof DUMMY_HEADER];
+  char        *hptr;
+  ssize_t     hlen;
+  sim_buf_t   *buf;
+} sim_msg_t;
 
-typedef void (*simio_cb_t)(char *buf, void *arg);
+extern sim_buf_t* sim_buf_alloc(size_t);
+extern void sim_buf_free(sim_buf_t*);
+extern void sim_buf_putc(sim_buf_t*, char);
+extern void sim_buf_puts(sim_buf_t*, char*);
+extern void sim_buf_setpos(sim_buf_t*, off_t pos);
+extern size_t sim_buf_read(sim_buf_t *ibuf, void *obuf, size_t obufsz);
+extern int sim_buf_eof(sim_buf_t*);
 
-/* configure */
-extern void sim_getopt(int argc, char **argv);
+extern sim_msg_t* sim_msg_alloc(size_t);
+extern void sim_msg_free(sim_msg_t*);
 
-/* read data sent to the HAL */
-extern ssize_t sim_read_timeout(sim_hal_id_t *hid, void *buf, size_t bufsz, int timeout);
-#define sim_read(a,b,c) sim_read_timeout((a),(b),(c),TIME_INFINITE)
-
-/* write data from the HAL */
-extern ssize_t sim_write(sim_hal_id_t *hid, void *buf, size_t bufsz);
-extern int sim_printf(sim_hal_id_t *hid, char *fmt, ...);
-
-/* shutdown */
-extern int sim_disconnect(void);
-
-#endif /* SIMIO_H */
+#endif /* SIMUTIL_H */
 
 /** @} */

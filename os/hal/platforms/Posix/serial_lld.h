@@ -159,9 +159,9 @@ extern "C" {
   void sd_lld_start(SerialDriver *sdp, const SerialConfig *config);
   void sd_lld_stop(SerialDriver *sdp);
 
-  size_t _serial_lld_read(SerialDriver *sdp, uint8_t *b, size_t n);
-  size_t _serial_lld_read_timeout(SerialDriver *sdp, uint8_t *b, size_t n, systime_t t);
-  size_t _serial_lld_write(SerialDriver *sdp, uint8_t *b, size_t n);
+  ssize_t _serial_lld_read(SerialDriver *sdp, uint8_t *b, size_t n);
+  ssize_t _serial_lld_read_timeout(SerialDriver *sdp, uint8_t *b, size_t n, systime_t t);
+  ssize_t _serial_lld_write(SerialDriver *sdp, uint8_t *b, size_t n);
 
   bool_t sd_lld_interrupt_pending(void);
 #ifdef __cplusplus
