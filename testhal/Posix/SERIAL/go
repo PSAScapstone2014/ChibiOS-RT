@@ -18,7 +18,7 @@ class SIMIO(StreamRequestHandler):
       self.write_line()
 
   def write_line(self):
-    data = 'sys.stdin.readline()'
+    data = sys.stdin.readline()
     print '[%s] -> %r' % (LLD_NAME, data)
     msg = sim_format(LLD_NAME, data)
     self.wfile.write(msg)
