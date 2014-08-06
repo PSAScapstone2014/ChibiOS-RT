@@ -33,7 +33,7 @@ DINCDIR =
 DLIBDIR =
 
 # List all default libraries here
-DLIBS = -pthread
+DLIBS =
 
 #
 # End of default section
