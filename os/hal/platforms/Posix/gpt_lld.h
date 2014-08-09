@@ -122,9 +122,13 @@ struct GPTDriver {
   GPT_DRIVER_EXT_FIELDS
 #endif
   /* End of the mandatory fields.*/
+  //Timer ID for current GPTD 
   timer_t timerid;
+  //Current signal value 
   struct sigevent sev;
+  //Interval timer value 
   struct itimerspec its;
+  //Other struct variables to help set sigevent and itimerspec
   long long freq_nanosecs;
   sigset_t mask;
   struct sigaction sa;

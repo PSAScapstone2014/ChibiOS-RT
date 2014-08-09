@@ -35,13 +35,12 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
-/*===========================================================================*/
-/* Driver exported variables.                                                */
-/*===========================================================================*/
-
 #define CLOCKID CLOCK_REALTIME
 #define SIG SIGRTMIN
 
+/*===========================================================================*/
+/* Driver exported variables.                                                */
+/*===========================================================================*/
 
 /**
  * @brief   GPTD1 driver identifier.
@@ -58,9 +57,7 @@
 #endif
 
 /*===========================================================================*/
-/* Driver local variables and types.                                         
- */
-
+/* Driver local variables and types                                          */
 /*===========================================================================*/
 
 /*===========================================================================*/
@@ -69,7 +66,6 @@
 
 #define errExit(msg)    do { perror(msg); exit(EXIT_FAILURE); \
                                } while (0)
-
 
 void establish_sighandler(GPTDriver *gptp) {
   printf("Establishing handler for signal %d\n", SIG);
@@ -93,22 +89,6 @@ void unblock(GPTDriver *gptp) {
   if (sigprocmask(SIG_UNBLOCK, &(gptp->mask), NULL) == -1)
      errExit("sigprocmask");
 }
-
-/**
-* @brief Shared IRQ handler.
-*
-* @param[in] gptp pointer to a @p GPTDriver object
-*/
-/*static void gpt_lld_serve_interrupt(GPTDriver *gptp) {
-
-  //Need to point to gpt tmr itimer variable. 
-  timer = gptp->tmr; 
-  if (gptp->state == GPT_ONESHOT) {
-    gptp->state = GPT_READY; *//* Back in GPT_READY state. */
-   /* gpt_lld_stop_timer(gptp);*/ /* Timer automatically stopped. */
-//  }
-  /*gptp->config->callback(gptp);*/
-//}
 
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
