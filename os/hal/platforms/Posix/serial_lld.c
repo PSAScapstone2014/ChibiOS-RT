@@ -235,7 +235,7 @@ void sd_lld_init(void) {
   SD1.com_data = INVALID_SOCKET;
   SD1.com_name = "SD1";
 #else
-  SD1.hid = SD1_IO;
+  SD1.hid.id = SD1_IO;
 
 #endif /* CH_DEMO */
 
@@ -249,7 +249,7 @@ void sd_lld_init(void) {
   SD2.com_data = INVALID_SOCKET;
   SD2.com_name = "SD2";
 #else
-  SD2.hid = SD2_IO;
+  SD2.hid.id = SD2_IO;
 
 #endif /* CH_DEMO */
 
@@ -265,10 +265,6 @@ void sd_lld_start(SerialDriver *sdp, const SerialConfig *config) {
 
   if (config == NULL)
     config = &default_config;
-
-#ifndef CH_DEMO
-  sim_connect(sdp->hid);
-#endif /* CH_DEMO */
 
 #if USE_SIM_SERIAL1
   if (sdp == &SD1) {
@@ -300,16 +296,16 @@ void sd_lld_stop(SerialDriver *sdp) {
 
 #ifndef CH_DEMO
 
-size_t _serial_lld_read(SerialDriver *sdp, uint8_t *b, size_t n) {
-  return sim_read(sdp->hid, b, n);
+ssize_t _serial_lld_read(SerialDriver *sdp, uint8_t *b, size_t n) {
+  return sim_read(&sdp->hid, b, n);
 }
 
-size_t _serial_lld_read_timeout(SerialDriver *sdp, uint8_t *b, size_t n, systime_t t) {
-  return sim_read_timeout(sdp->hid, b, n, t);
+ssize_t _serial_lld_read_timeout(SerialDriver *sdp, uint8_t *b, size_t n, systime_t t) {
+  return sim_read_timeout(&sdp->hid, b, n, t);
 }
 
-size_t _serial_lld_write(SerialDriver *sdp, uint8_t *b, size_t n) {
-  return sim_write(sdp->hid, b, n);
+ssize_t _serial_lld_write(SerialDriver *sdp, uint8_t *b, size_t n) {
+  return sim_write(&sdp->hid, b, n);
 }
 
 #endif /* CH_DEMO */

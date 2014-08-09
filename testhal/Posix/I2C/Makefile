@@ -123,8 +123,8 @@ ifeq ($(HOST_OSX),yes)
   LIBS += $(OSX_ARCH)
 else
   # Linux, or other
-  CPFLAGS += -m32 -pthread -Wa,-alms=$(<:.c=.lst)
-  LDFLAGS = -m32 -pthread -Wl,-Map=$(PROJECT).map,--cref,--no-warn-mismatch $(LIBDIR)
+  CPFLAGS += -m32 -Wa,-alms=$(<:.c=.lst)
+  LDFLAGS = -m32 -Wl,-Map=$(PROJECT).map,--cref,--no-warn-mismatch $(LIBDIR)
 endif
 
 # Generate dependency information

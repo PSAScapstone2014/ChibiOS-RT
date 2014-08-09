@@ -32,6 +32,7 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
+static sim_hal_id_t HID = { EXT_IO, 0 };
 
 /*===========================================================================*/
 /* Driver exported variables.                                                */
@@ -62,7 +63,7 @@ static msg_t read_thread(void *arg) {
   EXTDriver *extp = (EXTDriver*)arg;
   uint8_t channel;
   while (TRUE) {
-    int nb = sim_read(EXT_IO, &channel, sizeof channel);
+    int nb = sim_read(&HID, &channel, sizeof channel);
     if (nb < 0) {
       chThdSleep(1000);
     }
@@ -113,7 +114,6 @@ void ext_lld_start(EXTDriver *extp) {
     for (i = 0; i < EXT_MAX_CHANNELS; i++)
       extp->channelsEnabled[i] = TRUE;
 
-    sim_connect(EXT_IO);
     rthd = chThdCreateI(wsp, sizeof(wsp), NORMALPRIO, read_thread, (void*)extp);
     chSchWakeupS(rthd, RDY_OK);
 
@@ -132,7 +132,7 @@ void ext_lld_start(EXTDriver *extp) {
 void ext_lld_stop(EXTDriver *extp) {
   if (extp->state == EXT_ACTIVE) {
     /* Resets the peripheral.*/
-    (void)sim_disconnect(EXT_IO);
+    (void)sim_disconnect();
     (void)chThdTerminate(rthd);
 
     /* Disables the peripheral.*/

@@ -107,8 +107,10 @@ int main(int argc, char **argv) {
    */
   while (TRUE) {
     chThdSleepMilliseconds(5000);
+    fprintf(stderr, "extChannelDisable\n");
     extChannelDisable(&EXTD1, 0);
     chThdSleepMilliseconds(5000);
+    fprintf(stderr, "extChannelEnable\n");
     extChannelEnable(&EXTD1, 0);
   }
 }

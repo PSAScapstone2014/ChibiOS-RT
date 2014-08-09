@@ -33,7 +33,7 @@ DINCDIR =
 DLIBDIR =
 
 # List all default libraries here
-DLIBS = -pthread
+DLIBS =
 
 #
 # End of default section
@@ -90,7 +90,7 @@ ULIBDIR =
 ULIBS =
 
 # Define optimisation level here
-OPT = -ggdb -O2 -fomit-frame-pointer
+OPT = -ggdb -fomit-frame-pointer
 
 #
 # End of user defines

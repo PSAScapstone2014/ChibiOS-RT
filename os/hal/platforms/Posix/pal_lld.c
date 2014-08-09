@@ -55,6 +55,8 @@ sim_vio_port_t vio_port_4;
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
 
+static sim_hal_id_t HID = { PAL_IO, 0 };
+
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
@@ -96,7 +98,7 @@ void _pal_lld_init(const PALConfig *config) {
  * @notapi
  */
  void _pal_lld_writeport(ioportid_t port, uint32_t bits) {
-  sim_printf(PAL_IO, "set %s latch to 0x%02x (was 0x%02x)\n", port_lookup(port), bits, port->latch);
+  sim_printf(&HID, "set %s latch to 0x%02x (was 0x%02x)\n", port_lookup(port), bits, port->latch);
   port->latch = bits;
 }
 
