@@ -117,8 +117,6 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     }
 #endif /* PLATFORM_PWM_USE_PWM1 */
   }
- psc = (pwmp->clock/pwmp->config->frequency)-1;
- pwmp->psc = psc;
 }
 
 /**
