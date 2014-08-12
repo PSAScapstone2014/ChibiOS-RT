@@ -24,6 +24,7 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "simio.h"
 
 #if HAL_USE_SDC || defined(__DOXYGEN__)
 
@@ -45,6 +46,8 @@ SDCDriver SDCD1;
 /*===========================================================================*/
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
+
+static sim_hal_id_t HID = { SDC_IO , 0 };
 
 /*===========================================================================*/
 /* Driver local functions.                                                   */
@@ -183,7 +186,12 @@ bool_t sdc_lld_send_cmd_short(SDCDriver *sdcp, uint8_t cmd, uint32_t arg,
   (void)sdcp;
   (void)cmd;
   (void)arg;
-  (void)resp;
+
+  *resp = 0x00000000;
+
+  // Dummy high capacity flag
+  if (cmd == MMCSD_CMD_APP_OP_COND && arg == 0xC0100000)
+    *resp |= 0xc0000000;
 
   return CH_SUCCESS;
 }
@@ -208,7 +216,12 @@ bool_t sdc_lld_send_cmd_short_crc(SDCDriver *sdcp, uint8_t cmd, uint32_t arg,
   (void)sdcp;
   (void)cmd;
   (void)arg;
-  (void)resp;
+
+  *resp = 0x00000000;
+
+  // Dummy voltage flag
+  if (cmd == MMCSD_CMD_SEND_IF_COND && arg == MMCSD_CMD8_PATTERN)
+    *resp |= 0x00000100;
 
   return CH_SUCCESS;
 }
@@ -256,9 +269,13 @@ bool_t sdc_lld_read(SDCDriver *sdcp, uint32_t startblk,
                     uint8_t *buf, uint32_t n) {
 
   (void)sdcp;
-  (void)startblk;
-  (void)buf;
-  (void)n;
+
+  /* send starting block followed by the data */
+  if (sim_printf(&HID, "read %08x %08x", startblk, n) <= 0)
+    return CH_FAILED;
+
+  if ((sim_read(&HID, buf, n)) <= 0)
+      return CH_FAILED;
 
   return CH_SUCCESS;
 }
@@ -281,9 +298,13 @@ bool_t sdc_lld_write(SDCDriver *sdcp, uint32_t startblk,
                      const uint8_t *buf, uint32_t n) {
 
   (void)sdcp;
-  (void)startblk;
-  (void)buf;
-  (void)n;
+
+  /* send starting block followed by the data */
+  if (sim_printf(&HID, "write %08x %08x", startblk, n) <= 0)
+    return CH_FAILED;
+
+  if (sim_write(&HID, buf, n) <= 0)
+    return CH_FAILED;
 
   return CH_SUCCESS;
 }

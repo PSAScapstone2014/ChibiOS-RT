@@ -121,7 +121,7 @@ extern size_t sim_buf_read(sim_buf_t *ibuf, void *obuf, size_t obufsz) {
 }
 
 extern int sim_buf_eof(sim_buf_t *buf) {
-    return !!buf->dlen;
+    return !buf->dlen;
 }
 
 /**

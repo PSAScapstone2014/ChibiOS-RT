@@ -52,6 +52,7 @@ typedef enum {
   SD2_IO,
   EXT_IO,
   SPI_IO,
+  SDC_IO,
   HID_COUNT /* HID_COUNT must be last */
 } hid_t;
 

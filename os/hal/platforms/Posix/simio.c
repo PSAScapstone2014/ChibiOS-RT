@@ -125,20 +125,14 @@ extern void sim_getopt(int argc, char **argv) {
  */
 static char* hid2str(sim_hal_id_t *hid) {
   switch (hid->id) {
-    case SIM_IO:
-      return "SIM_IO";
-    case PAL_IO:
-      return "PAL_IO";
-    case SD1_IO:
-      return "SD1_IO";
-    case SD2_IO:
-      return "SD2_IO";
-    case EXT_IO:
-      return "EXT_IO";
-    case SPI_IO:
-      return "SPI_IO";
-    default:
-      return "UNK_IO";
+    case SIM_IO: return "SIM_IO";
+    case PAL_IO: return "PAL_IO";
+    case SD1_IO: return "SD1_IO";
+    case SD2_IO: return "SD2_IO";
+    case EXT_IO: return "EXT_IO";
+    case SPI_IO: return "SPI_IO";
+    case SDC_IO: return "SDC_IO";
+    default:     return "UNK_IO";
   }
 }
 
@@ -148,6 +142,7 @@ static hid_t str2hid(char *qname) {
   else if (!strcmp(qname, "SD2_IO")) return SD2_IO;
   else if (!strcmp(qname, "EXT_IO")) return EXT_IO;
   else if (!strcmp(qname, "SPI_IO")) return SPI_IO;
+  else if (!strcmp(qname, "SDC_IO")) return SDC_IO;
   eprintf("no such queue %s", qname);
   return SIM_IO;
 }
@@ -166,7 +161,7 @@ static sim_buf_t* _sim_encode(sim_hal_id_t *hid, void *buf, size_t bufsz) {
   sim_buf_puts(code, "\t");
 
   for (i = 0; i < bufsz; i++) {
-    snprintf(hex, sizeof hex, "%02x", ((char*)buf)[i]);
+    snprintf(hex, sizeof hex, "%02x", ((uint8_t*)buf)[i]);
     sim_buf_puts(code, hex);
   }
 
@@ -293,7 +288,7 @@ extern ssize_t sim_read_timeout(sim_hal_id_t *hid, void *buf, size_t bufsz, int 
   }
 
   nb = sim_buf_read(msg->buf, buf, bufsz);
-  if (sim_buf_eof(buf)) {
+  if (sim_buf_eof(msg->buf)) {
     sim_msg_free(msg);
     msg = NULL;
   }

@@ -14,12 +14,15 @@
     limitations under the License.
 */
 
+#include <stdio.h>
 #include <string.h>
 #include "ch.h"
 #include "hal.h"
 
-#include "shell.h"
-#include "chprintf.h"
+#ifdef MMCSD_BLOCK_SIZE /* this hack may need to be accounted for in the posix lld */
+#undef MMCSD_BLOCK_SIZE
+#define MMCSD_BLOCK_SIZE 1
+#endif
 
 #define SDC_DATA_DESTRUCTIVE_TEST   TRUE
 
@@ -125,30 +128,28 @@ void fillbuffers(uint8_t pattern){
 /**
  *
  */
-void cmd_sdiotest(BaseSequentialStream *chp, int argc, char *argv[]){
-  (void)argc;
-  (void)argv;
+void sdiotest(void){
   uint32_t i = 0;
 
-  chprintf(chp, "Trying to connect SDIO... ");
+  printf("Trying to connect SDIO... ");
   chThdSleepMilliseconds(100);
 
   if (!sdcConnect(&SDCD1)) {
 
-    chprintf(chp, "OK\r\n");
-    chprintf(chp, "*** Card CSD content is: ");
-    chprintf(chp, "%X %X %X %X \r\n", (&SDCD1)->csd[3], (&SDCD1)->csd[2],
+    printf("OK\r\n");
+    printf("*** Card CSD content is: ");
+    printf("%X %X %X %X \r\n", (&SDCD1)->csd[3], (&SDCD1)->csd[2],
                                       (&SDCD1)->csd[1], (&SDCD1)->csd[0]);
 
-    chprintf(chp, "Single aligned read...");
+    printf("Single aligned read...");
     chThdSleepMilliseconds(100);
     if (sdcRead(&SDCD1, 0, inbuf, 1))
       chSysHalt();
-    chprintf(chp, " OK\r\n");
+    printf(" OK\r\n");
     chThdSleepMilliseconds(100);
 
 
-    chprintf(chp, "Single unaligned read...");
+    printf("Single unaligned read...");
     chThdSleepMilliseconds(100);
     if (sdcRead(&SDCD1, 0, inbuf + 1, 1))
       chSysHalt();
@@ -156,11 +157,11 @@ void cmd_sdiotest(BaseSequentialStream *chp, int argc, char *argv[]){
       chSysHalt();
     if (sdcRead(&SDCD1, 0, inbuf + 3, 1))
       chSysHalt();
-    chprintf(chp, " OK\r\n");
+    printf(" OK\r\n");
     chThdSleepMilliseconds(100);
 
 
-    chprintf(chp, "Multiple aligned reads...");
+    printf("Multiple aligned reads...");
     chThdSleepMilliseconds(100);
     fillbuffers(0x55);
     /* fill reference buffer from SD card */
@@ -172,11 +173,11 @@ void cmd_sdiotest(BaseSequentialStream *chp, int argc, char *argv[]){
       if (memcmp(inbuf, outbuf, SDC_BURST_SIZE * MMCSD_BLOCK_SIZE) != 0)
         chSysHalt();
     }
-    chprintf(chp, " OK\r\n");
+    printf(" OK\r\n");
     chThdSleepMilliseconds(100);
 
 
-    chprintf(chp, "Multiple unaligned reads...");
+    printf("Multiple unaligned reads...");
     chThdSleepMilliseconds(100);
     fillbuffers(0x55);
     /* fill reference buffer from SD card */
@@ -188,12 +189,12 @@ void cmd_sdiotest(BaseSequentialStream *chp, int argc, char *argv[]){
       if (memcmp(inbuf, outbuf, SDC_BURST_SIZE * MMCSD_BLOCK_SIZE) != 0)
         chSysHalt();
     }
-    chprintf(chp, " OK\r\n");
+    printf(" OK\r\n");
     chThdSleepMilliseconds(100);
 
 #if SDC_DATA_DESTRUCTIVE_TEST
 
-    chprintf(chp, "Single aligned write...");
+    printf("Single aligned write...");
     chThdSleepMilliseconds(100);
     fillbuffer(0xAA, inbuf);
     if (sdcWrite(&SDCD1, 0, inbuf, 1))
@@ -203,9 +204,9 @@ void cmd_sdiotest(BaseSequentialStream *chp, int argc, char *argv[]){
       chSysHalt();
     if (memcmp(inbuf, outbuf, MMCSD_BLOCK_SIZE) != 0)
       chSysHalt();
-    chprintf(chp, " OK\r\n");
+    printf(" OK\r\n");
 
-    chprintf(chp, "Single unaligned write...");
+    printf("Single unaligned write...");
     chThdSleepMilliseconds(100);
     fillbuffer(0xFF, inbuf);
     if (sdcWrite(&SDCD1, 0, inbuf+1, 1))
@@ -215,13 +216,13 @@ void cmd_sdiotest(BaseSequentialStream *chp, int argc, char *argv[]){
       chSysHalt();
     if (memcmp(inbuf+1, outbuf+1, MMCSD_BLOCK_SIZE) != 0)
       chSysHalt();
-    chprintf(chp, " OK\r\n");
+    printf(" OK\r\n");
 
-    chprintf(chp, "Running badblocks at 0x10000 offset...");
+    printf("Running badblocks at 0x10000 offset...");
     chThdSleepMilliseconds(100);
     if(badblocks(0x10000, 0x11000, SDC_BURST_SIZE, 0xAA))
       chSysHalt();
-    chprintf(chp, " OK\r\n");
+    printf(" OK\r\n");
 #endif /* !SDC_DATA_DESTRUCTIVE_TEST */
 
   }
@@ -250,12 +251,7 @@ int main(void) {
    */
   sdcStart(&SDCD1, &sdccfg);
 
-  /*
-   * Normal main() thread activity.
-   * Blinking signaling about successful passing.
-   */
-  while (TRUE) {
-    palTogglePad(GPIOB, GPIOB_LED_R);
-    chThdSleepMilliseconds(100);
-  }
+  sdiotest();
+
+  return 0;
 }
