@@ -24,6 +24,8 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "simio.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -55,7 +57,10 @@ I2CDriver I2CD1;
 static void recieve_stream(uint8_t * rxbuf, size_t rxbyte)
 {
 
-   fgets(rxbuf, rxbyte,stdin);
+//   fgets(rxbuf, rxbyte,stdin);
+//
+   sim_read(SPI_IO, rxbuf, rxbyte);
+   
    printf("Recieving %s\n", rxbuf);
 
 }
@@ -179,17 +184,11 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
 
 
 
-   if((timeout != TIME_INFINITE)  && !chVTIsArmedI(&vt))
-   {
-       return RDY_TIMEOUT;
-
-   }
    i2cp->thread = chThdSelf();
    chSchGoSleepS(THD_STATE_SUSPENDED);
-   if ((timeout != TIME_INFINITE) && chVTIsArmedI(&vt))
-       chVTResetI(&vt);
 
-  return chThdSelf()->p_u.rdymsg;
+  return RDY_TIMEOUT;
+  
 }
 
 /**
@@ -224,7 +223,7 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
 
    VirtualTimer vt;
 
-   
+  //if the timeout set the virtual timer and uses the function i2c_lld 
    if(timeout != TIME_INFINITE)
    {
        chVTSetI(&vt, timeout, i2c_lld_safety_timeout, (void *)i2cp);
@@ -238,17 +237,11 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
 
    transmit_stream(txbuf, txbytes);
 
-   if((timeout != TIME_INFINITE)  && !chVTIsArmedI(&vt))
-   {
-       return RDY_TIMEOUT;
-
-   }
    i2cp->thread = chThdSelf();
    chSchGoSleepS(THD_STATE_SUSPENDED);
-   if ((timeout != TIME_INFINITE) && chVTIsArmedI(&vt))
-       chVTResetI(&vt);
 
-  return chThdSelf()->p_u.rdymsg;
+  return RDY_TIMEOUT;
+
 }
 
 #endif /* HAL_USE_I2C */
