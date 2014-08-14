@@ -34,7 +34,6 @@ static const ADCConversionGroup adccfg ={
     NULL, 
     10,
     3,
-    out_2,
     4
 };
 static const ADCConversionGroup adccfg_1 ={
@@ -44,7 +43,6 @@ static const ADCConversionGroup adccfg_1 ={
     NULL,
     10,
     3,
-    out_1,
     8
 };
 /*LED blinker thread*/

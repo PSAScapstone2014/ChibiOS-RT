@@ -48,8 +48,9 @@
 #define PLATFORM_ADC_USE_ADC1               TRUE
 #endif
 /** @} */
+//if no digital values 
 #if !defined(CONVERT) 
-#define CONVERT                             TRUE
+#define CONVERT                             FALSE
 #endif
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
@@ -130,7 +131,6 @@ typedef struct {
   /* End of the mandatory fields.*/
   int                       volt_range;
   int                       bits;
-  uint32_t                  *volt_input;
   int                    buffer_size;
 } ADCConversionGroup;
 
@@ -187,8 +187,10 @@ struct ADCDriver {
 #endif
   /* End of the mandatory fields.*/
 bool        toConvert;
+#if CONVERT
 float       *adc_val;
-
+float    *volt_input;
+#endif
 };
 
 /*===========================================================================*/

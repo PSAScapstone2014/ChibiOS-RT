@@ -49,6 +49,7 @@ ADCDriver ADCD1;
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
+//create this thread to emulate if the buffer is circular
 static WORKING_AREA(circular,128);
 static msg_t buffer_thread(void *arg)
 {
@@ -65,15 +66,18 @@ static msg_t buffer_thread(void *arg)
         float exp = powf(2, ADCD1.grpp->bits);
         float adc_val = ADCD1.grpp->volt_range /exp;
         
+        uint32_t    volt_input[ADCD1.grpp->buffer_size]; 
         float sample[ADCD1.grpp->buffer_size];
         n = 0;
         for(;n < (int)ADCD1.grpp->buffer_size;n++)
         {
             sample[n] = exp *  ADCD1.samples[n]/ADCD1.grpp->volt_range; 
-            ADCD1.grpp->volt_input[n] = sample[n]*adc_val;    
+            volt_input[n] = sample[n]*adc_val;    
             printf("adc value: %.2f ", sample[n]);
-            printf("voltage input(digital): %.2f \n", ADCD1.grpp->volt_input[n]);
+            printf("voltage input(digital): %.2f \n", volt_input[n]);
         }
+        ADCD1.adc_val = sample;
+        ADCD1.volt_input = volt_input;
 #endif 
   chThdSleepMilliseconds(1000);       
     } 
@@ -160,12 +164,16 @@ void adc_lld_start_conversion(ADCDriver *adcp) {
   }
   else 
   {
+
+      //prints out the digital outputs
         int n=0;
         for(;n < (int)grrp->buffer_size; n++)
         {
            printf("sample %d: %d \n",n ,adcp->samples[n]);
         } 
- #if CONVERT     
+ #if CONVERT
+        //prints out the calculated digital outputs if there's no digit outputs within
+        //the buffer.      
         float exp = powf(2, grrp->bits);
         float adc_val = grrp->volt_range /exp;
         float sample[adcp->grpp->buffer_size];
@@ -178,6 +186,8 @@ void adc_lld_start_conversion(ADCDriver *adcp) {
             printf("adc value: %.2f ", sample[n]);
             printf("voltage input(digital): %.2f \n", volt_input[n]);
         }
+        adcp->adc_val = sample;
+        adcp->volt_input = volt_input;
 #endif        
   } 
 }
