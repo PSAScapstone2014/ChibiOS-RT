@@ -48,7 +48,9 @@
 #define PLATFORM_ADC_USE_ADC1               TRUE
 #endif
 /** @} */
-
+#if !defined(CONVERT) 
+#define CONVERT                             TRUE
+#endif
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
@@ -127,10 +129,9 @@ typedef struct {
   adcerrorcallback_t        error_cb;
   /* End of the mandatory fields.*/
   int                       volt_range;
-  float                     resolution;
   int                       bits;
-  uint16_t                  *volt_input;
-
+  uint32_t                  *volt_input;
+  int                    buffer_size;
 } ADCConversionGroup;
 
 /**
@@ -185,7 +186,8 @@ struct ADCDriver {
   ADC_DRIVER_EXT_FIELDS
 #endif
   /* End of the mandatory fields.*/
-
+bool        toConvert;
+float       *adc_val;
 
 };
 
