@@ -23,6 +23,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
 
 #include "ch.h"
@@ -94,12 +95,10 @@ void ChkIntSources(void) {
     CH_IRQ_EPILOGUE();
 
     dbg_check_lock();
-    if (chSchIsPreemptionRequired()) {
+    if (chSchIsPreemptionRequired())
       chSchDoReschedule();
-    }
     dbg_check_unlock();
   }
-
 }
 
 /** @} */

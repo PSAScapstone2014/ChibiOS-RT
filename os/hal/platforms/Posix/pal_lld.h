@@ -79,11 +79,11 @@ typedef struct {
    */
   sim_vio_port_t    VP2Data;
   /**
-   * @brief Virtual port 2 setup data.
+   * @brief Virtual port 3 setup data.
    */
   sim_vio_port_t    VP3Data;
   /**
-   * @brief Virtual port 2 setup data.
+   * @brief Virtual port 4 setup data.
    */
   sim_vio_port_t    VP4Data;
 } PALConfig;
@@ -129,12 +129,12 @@ typedef sim_vio_port_t *ioportid_t;
 #define IOPORT2         (&vio_port_2)
 
 /**
- * @brief   VIO port 2 identifier.
+ * @brief   VIO port 3 identifier.
  */
 #define IOPORT3         (&vio_port_3)
 
 /**
- * @brief   VIO port 2 identifier.
+ * @brief   VIO port 4 identifier.
  */
 #define IOPORT4         (&vio_port_4)
 
@@ -150,7 +150,12 @@ typedef sim_vio_port_t *ioportid_t;
  *
  * @notapi
  */
-#define pal_lld_init(config) _pal_lld_init(config)
+#define pal_lld_init(config)                                                \
+  (vio_port_1 = (config)->VP1Data,                                          \
+   vio_port_2 = (config)->VP2Data,                                          \
+   vio_port_3 = (config)->VP3Data,                                          \
+   vio_port_4 = (config)->VP4Data)
+
 
 /**
  * @brief   Reads the physical I/O port states.

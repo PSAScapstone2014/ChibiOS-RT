@@ -82,13 +82,6 @@ char* port_lookup(ioportid_t port) {
 /* Driver exported functions.                                                */
 /*===========================================================================*/
 
-void _pal_lld_init(const PALConfig *config) {
-  vio_port_1 = (config)->VP1Data;
-  vio_port_2 = (config)->VP2Data;
-  vio_port_3 = (config)->VP3Data;
-  vio_port_4 = (config)->VP4Data;
-}
-
 /**
  * @brief   Writes a bits mask on a I/O port.
  *
