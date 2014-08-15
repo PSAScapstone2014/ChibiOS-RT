@@ -101,4 +101,4 @@ subprocess.check_call(['./ch'])
 simio_thread.join()
 
 memfile.dump('out.bin')
-subprocess.call('hexdump', 'out.bin')
+subprocess.call(['hexdump', 'out.bin'])
