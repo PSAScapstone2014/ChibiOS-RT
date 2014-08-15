@@ -19,11 +19,6 @@
 #include "ch.h"
 #include "hal.h"
 
-#ifdef MMCSD_BLOCK_SIZE /* this hack may need to be accounted for in the posix lld */
-#undef MMCSD_BLOCK_SIZE
-#define MMCSD_BLOCK_SIZE 1
-#endif
-
 #define SDC_DATA_DESTRUCTIVE_TEST   TRUE
 
 #define SDC_BURST_SIZE      8 /* how many sectors reads at once */

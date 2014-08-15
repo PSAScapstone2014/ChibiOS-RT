@@ -270,11 +270,13 @@ bool_t sdc_lld_read(SDCDriver *sdcp, uint32_t startblk,
 
   (void)sdcp;
 
-  /* send starting block followed by the data */
-  if (sim_printf(&HID, "read %08x %08x", startblk, n) <= 0)
+  /* send read request with starting block and quantity */
+  if (sim_printf(&HID, "cmd %s startblk %08x nblks %08x",
+      "read", startblk, n) <= 0)
     return CH_FAILED;
 
-  if ((sim_read(&HID, buf, n)) <= 0)
+  /* wait for data */
+  if ((sim_read(&HID, buf, n * MMCSD_BLOCK_SIZE)) <= 0)
       return CH_FAILED;
 
   return CH_SUCCESS;
@@ -299,11 +301,13 @@ bool_t sdc_lld_write(SDCDriver *sdcp, uint32_t startblk,
 
   (void)sdcp;
 
-  /* send starting block followed by the data */
-  if (sim_printf(&HID, "write %08x %08x", startblk, n) <= 0)
+  /* send write request with starting block and quantity */
+  if (sim_printf(&HID, "cmd %s startblk %08x nblks %08x",
+      "write", startblk, n) <= 0)
     return CH_FAILED;
 
-  if (sim_write(&HID, buf, n) <= 0)
+  /* write data */
+  if (sim_write(&HID, buf, n * MMCSD_BLOCK_SIZE) <= 0)
     return CH_FAILED;
 
   return CH_SUCCESS;

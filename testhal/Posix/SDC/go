@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
 from SocketServer import StreamRequestHandler, TCPServer
 import subprocess
+import encodings
 import threading
 import time
 import sys
@@ -10,58 +11,81 @@ import io
 LLD_NAME = 'SDC_IO'
 
 def sim_format(lld, data):
-  return '%s\t%s\n' % (lld , data.encode('hex'))
+  return '%s\t%s\n' % (lld , encodings.codecs.encode(data, 'hex'))
 
 class SIMIO(StreamRequestHandler):
   def handle(self):
     print '[SIMIO] CONNECT'
-    while True:
-      self.read_line()
 
-  def read_line(self):
-    # get io data
-    line = self.rfile.readline()
-    if not line:
-      sys.stdout.write('[%s] EOF\n' % LLD_NAME)
+    for line in self.rfile:
+      sdc_cmd = self.decodeline(line)
 
-    header, code = line.strip().split('\t', 1)
+      # parse sdc message
+      _, cmd, _, startblk, _, nblks = sdc_cmd.split(' ', 5)
+      startblk = int(startblk, 16)
+      nblks    = int(nblks, 16)
 
-    # decode io data
-    metadata = code.decode('hex')
-    sys.stdout.write('[%s] RECV %s\n' % (header, metadata))
+      # sdc asked to read data
+      if cmd == 'read':
+        # get requested data and send it back to sdc
+        data = memfile.read(startblk, nblks)
+        self.wfile.write(sim_format(LLD_NAME, data))
 
-    # parse sdc message
-    cmd, offset, length = metadata.split(' ', 2)
-    offset = int(offset, 16)
-    length = int(length, 16)
+      # sdc asked to write data
+      elif cmd == 'write':
+        # read and decode another io message that contains the data
+        line = self.rfile.readline()
+        data = self.decodeline(line)
 
-    # handle offset seek
-    memfile.seek(offset, os.SEEK_SET)
+        # store the data
+        memfile.write(startblk, data)
 
-    # sdc asked to read data
-    if cmd == 'read':
-      # get requested data
-      data = memfile.read(length)
-      sys.stdout.write('[%s] READ %r\n' % ('MEMORY', data))
+  def decodeline(self, line):
+    # split the line based on the simio protocol
+    source, code = line.strip().split('\t', 1)
 
-      # send data back to sdc
-      sys.stdout.write('[%s] SEND %r\n' % (header, data))
-      self.wfile.write(sim_format(LLD_NAME, data))
+    # decode simio data
+    data = code.decode('hex')
+    sys.stdout.write('[%s] RECV %s\n' % (source, data))
 
-    # sdc asked to write data
-    elif cmd == 'write':
-      # read and decode another io message that contains the data
-      line = self.rfile.readline()
-      header, code = line.strip().split('\t', 1)
-      data = code.decode('hex')
+    return data
 
-      # store the data
-      sys.stdout.write('[%s] WRITE %r\n' % ('MEMORY', data))
-      memfile.write(data)
+class SDCard(object):
+  MMCSD_BLOCK_SIZE = 512
 
-memfile = io.BytesIO()
-for i in range(5):
-  memfile.write('\0x0')
+  def __init__(self, size):
+    self.nblks = size / self.MMCSD_BLOCK_SIZE
+    self.memfile = io.BytesIO(bytearray(size))
+
+  def read(self, startblk, nblks):
+    # set position
+    memfile.setblock(startblk)
+
+    # get output buffer
+    length = nblks * self.MMCSD_BLOCK_SIZE
+    data = bytearray(length)
+
+    # read data
+    nb = self.memfile.readinto(data)
+    if nb != length:
+      raise Exception("read nb %d != buffer length %d" % (nb, length))
+
+    return data
+
+  def write(self, startblk, data):
+    memfile.setblock(startblk)
+    return self.memfile.write(data)
+
+  def setblock(self, block):
+    return self.memfile.seek(block * self.MMCSD_BLOCK_SIZE, os.SEEK_SET)
+
+  def dump(self, path):
+    f = open(path, 'w')
+    f.write(self.memfile.getvalue())
+    f.close()
+
+# create a 4K SD card - will be expanded as needed
+memfile = SDCard(4 * 1024)
 
 # prevent bind errors on relaunch
 TCPServer.allow_reuse_address = True
@@ -74,3 +98,7 @@ simio_thread.start()
 
 # spawn the unit test
 subprocess.check_call(['./ch'])
+simio_thread.join()
+
+memfile.dump('out.bin')
+subprocess.call('hexdump', 'out.bin')
