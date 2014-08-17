@@ -287,13 +287,15 @@ extern ssize_t sim_read_timeout(sim_hal_id_t *hid, void *buf, size_t bufsz, int 
     status = chMBFetch(&read_mb[hid->id], (msg_t*)&msg, timeout);
   }
 
-  nb = sim_buf_read(msg->buf, buf, bufsz);
-  if (sim_buf_eof(msg->buf)) {
-    sim_msg_free(msg);
-    msg = NULL;
+  if (status == RDY_OK) {
+    nb = sim_buf_read(msg->buf, buf, bufsz);
+    if (sim_buf_eof(msg->buf)) {
+      sim_msg_free(msg);
+      msg = NULL;
+    }
   }
 
-  return status == RDY_OK ? nb : -1;
+  return status == RDY_OK ? nb : status;
 }
 
 /**
