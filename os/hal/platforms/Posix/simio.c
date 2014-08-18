@@ -86,7 +86,6 @@ static void _sim_init_once(void) {
     for (i = 0; i < HID_COUNT; i++) {
       chMBInit(&read_mb[i], readq[i], HID_COUNT);
     }
-    (void)chThdCreateStatic(wap, sizeof(wap), NORMALPRIO, read_thread, NULL);
   }
 }
 
@@ -384,6 +383,8 @@ static int _sim_connect() {
     eprintf("already connected");
     return 0;
   }
+
+  (void)chThdCreateStatic(wap, sizeof(wap), NORMALPRIO, read_thread, NULL);
 
   /* build addr struct */
   addr.sin_family = AF_INET;

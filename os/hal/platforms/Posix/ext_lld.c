@@ -133,8 +133,7 @@ void ext_lld_start(EXTDriver *extp) {
 void ext_lld_stop(EXTDriver *extp) {
   if (extp->state == EXT_ACTIVE) {
     /* Resets the peripheral.*/
-    (void)sim_disconnect();
-    (void)chThdTerminate(rthd);
+    sim_disconnect();
 
     /* Disables the peripheral.*/
     extp->state = EXT_STOP;
