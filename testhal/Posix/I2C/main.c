@@ -19,18 +19,21 @@
 #include "ch.h"
 #include "hal.h"
 
-#include "i2c_pns.h"
-#include "tmp75.h"
-#include "fake.h"
-#include "lis3.h"
-/*static void led4off(void *arg) {
+#include "simio.h"
+#define rx_DEPTH  2
+#define tx_DEPTH  4
+
+static i2cflags_t errors = 0;
+static void led4off(void *arg) {
 
   (void)arg;
 
   // palClearPad(GPIOC, GPIOC_LED4);
   printf("led4 OFF\n");
 
-}*/
+}
+
+
 
 /* Triggered when the button is pressed or released. The LED4 is set to ON.*/
 /*static void extcb1(EXTDriver *extp, expchannel_t channel) {
@@ -53,7 +56,6 @@
 
 
 
-
 static const I2CConfig i2cfg1 ={
     OPMODE_I2C,
     400000,
@@ -67,11 +69,20 @@ static msg_t dummy_1_thread(void *arg)
 {
     chRegSetThreadName("dummy1");
     (void)arg;
+    uint8_t rx_buf[rx_DEPTH];
+    uint8_t tx_buf[tx_DEPTH];
     while(TRUE){
+        systime_t tmo = MS2ST(4);
+
         chThdSleepMilliseconds(32);
-        printf("requesting acceleration");
-        request_acceleration_data();
-        printf("\n"); 
+        msg_t status = RDY_OK;
+        i2cAcquireBus(&I2CD1);
+        status = i2cMasterTransmitTimeout(&I2CD1, 0, rx_buf, rx_DEPTH, tx_buf,tx_DEPTH, tmo);
+        i2cReleaseBus(&I2CD1);
+        if(status != RDY_OK)
+        {
+            errors = i2cGetErrors(&I2CD1);           
+        }
     }
     return 0;
 }
@@ -82,11 +93,18 @@ static msg_t dummy_2_thread(void *arg)
 {
     chRegSetThreadName("dummy2");
     (void)arg;
-
+    uint8_t tx_buf[2];
     while(TRUE){
         chThdSleepMilliseconds(32); 
-        printf("requesting temp");
-        request_temperature();
+        int16_t t_int =0 , t_frac=0;
+        msg_t status = RDY_OK;
+        systime_t tmo = MS2ST(2);
+        i2cAcquireBus(&I2CD1);
+        status = i2cMasterReceiveTimeout(&I2CD1, 0, tx_buf, 2, tmo);
+        i2cReleaseBus(&I2CD1);
+        if(status != RDY_OK){
+            errors = i2cGetErrors(&I2CD1);
+        }
         printf("\n"); 
     }
     return 0;
@@ -108,7 +126,10 @@ int main(void) {
   halInit();
   chSysInit();
   chThdSleepMilliseconds(200);
-  I2CInit_pns();
+  i2cInit();
+  i2cStart(&I2CD1, &i2cfg1);
+  palSetPadMode(IOPORT2, 6, 17);
+  chThdSleepMilliseconds(100);
   chThdCreateStatic(dummy_1, sizeof(dummy_1), NORMALPRIO, dummy_1_thread, NULL);
   chThdCreateStatic(dummy_2, sizeof(dummy_2), NORMALPRIO, dummy_2_thread, NULL);
   while (TRUE) {

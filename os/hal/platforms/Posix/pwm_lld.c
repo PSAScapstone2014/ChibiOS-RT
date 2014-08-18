@@ -138,7 +138,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
 void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
   (void)pwmp;
   (void)period;
-  
+//change the period of the pwm   
    chDbgCheck(pwmp->state != PWM_READY, 
                 "PWM not started");
    pwmp->period = period; 
