@@ -73,11 +73,7 @@ SRC  = ${PORTSRC} \
        $(BOARDSRC) \
        ${CHIBIOS}/os/various/shell.c \
        ${CHIBIOS}/os/various/chprintf.c \
-       main.c \
-	   i2c_pns.c \
-	   tmp75.c \
-	   lis3.c \
-	   fake.c 
+       main.c 
 
 # List ASM source files here
 ASRC =

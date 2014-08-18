@@ -61,13 +61,15 @@ static void recieve_stream(uint8_t * rxbuf, size_t rxbyte)
 //
    sim_read(SPI_IO, rxbuf, rxbyte);
    
-   printf("Recieving %s\n", rxbuf);
+   printf("Recieving %d\n", rxbuf);
 
 }
 
 static void transmit_stream (const uint8_t *txbuf, size_t txbyte)
 {
-    printf("transmitting %s \n",txbuf);
+    printf("transmitting %d \n",txbuf);
+    sim_write(SPI_IO, txbuf,txbyte);
+
 }
 
 
