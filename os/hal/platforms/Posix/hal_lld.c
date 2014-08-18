@@ -23,8 +23,6 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
 
 #include "ch.h"
 #include "hal.h"
@@ -36,9 +34,6 @@
 /*===========================================================================*/
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
-
-static struct timeval nextcnt;
-static struct timeval tick = {0, 1000000 / CH_FREQUENCY};
 
 /*===========================================================================*/
 /* Driver local functions.                                                   */
@@ -62,43 +57,6 @@ void hal_lld_init(void) {
 #else
   puts("ChibiOS/RT simulator (Linux)\n");
 #endif
-  gettimeofday(&nextcnt, NULL);
-  timeradd(&nextcnt, &tick, &nextcnt);
-}
-
-/**
- * @brief Interrupt simulation.
- */
-void ChkIntSources(void) {
-  struct timeval tv;
-
-#if CH_DEMO
-  if (sd_lld_interrupt_pending()) {
-    dbg_check_lock();
-    if (chSchIsPreemptionRequired())
-      chSchDoReschedule();
-    dbg_check_unlock();
-    return;
-  }
-#endif
-
-  gettimeofday(&tv, NULL);
-  if (timercmp(&tv, &nextcnt, >=)) {
-    timeradd(&nextcnt, &tick, &nextcnt);
-
-    CH_IRQ_PROLOGUE();
-
-    chSysLockFromIsr();
-    chSysTimerHandlerI();
-    chSysUnlockFromIsr();
-
-    CH_IRQ_EPILOGUE();
-
-    dbg_check_lock();
-    if (chSchIsPreemptionRequired())
-      chSchDoReschedule();
-    dbg_check_unlock();
-  }
 }
 
 /** @} */

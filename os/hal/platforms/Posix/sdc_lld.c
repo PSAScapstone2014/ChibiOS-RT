@@ -307,7 +307,7 @@ bool_t sdc_lld_write(SDCDriver *sdcp, uint32_t startblk,
     return CH_FAILED;
 
   /* write data */
-  if (sim_write(&HID, buf, n * MMCSD_BLOCK_SIZE) <= 0)
+  if (sim_write(&HID, (uint8_t*)buf, n * MMCSD_BLOCK_SIZE) <= 0)
     return CH_FAILED;
 
   return CH_SUCCESS;

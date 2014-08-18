@@ -205,7 +205,7 @@ struct context {
 /**
  * Simulator initialization.
  */
-#define port_init()
+#define port_init() _port_init()
 
 /**
  * Locks system mutex.
@@ -251,6 +251,7 @@ struct context {
 #ifdef __cplusplus
 extern "C" {
 #endif
+  void _port_init(void);
   void _port_lock(void);
   void _port_unlock(void);
   void _port_lock_from_isr(void);

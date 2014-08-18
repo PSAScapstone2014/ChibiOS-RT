@@ -65,7 +65,8 @@ static msg_t read_thread(void *arg) {
   while (TRUE) {
     int nb = sim_read(&HID, &channel, sizeof channel);
     if (nb < 0) {
-      chThdSleep(1000);
+      /* don't spam errors too quickly */
+      chThdSleep(S2ST(1));
     }
     else if (nb > 0) {
       if (channel < EXT_MAX_CHANNELS

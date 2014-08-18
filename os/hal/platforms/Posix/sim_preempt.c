@@ -25,15 +25,16 @@ static int spin_poll(systime_t timeout, int fd) {
     }
 
     if (nfds < 0) {
-      fprintf(stderr, "ERROR sim_poll %s\n",
-        strerror(errno));
-
-      if (errno == EINTR)
+      if (errno == EINTR) {
         continue;
-      else
+      }
+      else {
+        fprintf(stderr, "ERROR spin_poll %s\n",
+          strerror(errno));
         return -1;
-
-    } else if (nfds == 0) {
+      }
+    }
+    else if (nfds == 0) {
       /* force reschedule */
       chThdSleep(1);
       continue;

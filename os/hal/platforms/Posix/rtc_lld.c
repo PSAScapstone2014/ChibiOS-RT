@@ -137,9 +137,7 @@ static msg_t alarm_thread(void *arg) {
   while (TRUE) {
     chThdSleep(1000);
     if (RTCD1.callback) {
-      CH_IRQ_PROLOGUE();
       RTCD1.callback(&RTCD1, RTC_EVENT_SECOND);
-      CH_IRQ_EPILOGUE();
     }
   }
 }

@@ -26,7 +26,6 @@ static const SPIConfig spicfg = {
   0
 };
 
-static uint64_t txbuf[512];
 static uint64_t rxbuf[512];
 
 /*
@@ -46,17 +45,15 @@ int main(void) {
 
   spiStart(&SPID1, &spicfg);
   spiSelect(&SPID1);
-  spiStartReceive(&SPID1, 512, rxbuf);
-  spiStartSend(&SPID1, 512, rxbuf);
 
   /*
    * Normal main() thread activity, in this demo it continues to get data from stdin and
    * echo it to standard out.
    */
   while (TRUE) {
-    chThdSleepMilliseconds(500);
     spiStartReceive(&SPID1, 512, rxbuf);
     spiStartSend(&SPID1, 512, rxbuf);
+    chThdSleepMilliseconds(500);
   }
 
   return 0;

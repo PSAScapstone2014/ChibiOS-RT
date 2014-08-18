@@ -70,7 +70,6 @@
 extern "C" {
 #endif
   void hal_lld_init(void);
-  void ChkIntSources(void);
 #ifdef __cplusplus
 }
 #endif

@@ -37,6 +37,7 @@ int main(void) {
 
   for (i = 0; i < 5; i++) {
     palWritePad(IOPORT1, i, PAL_HIGH);
+    chThdSleep(S2ST(1));
   }
 
   return 0;

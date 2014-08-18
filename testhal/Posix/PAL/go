@@ -19,6 +19,7 @@ TCPServer.allow_reuse_address = True
 # listen for simio connections
 simio = TCPServer(('localhost', 27000), SIMIO)
 simio_thread = threading.Thread(target=simio.handle_request)
+simio_thread.setDaemon(True)
 simio_thread.start()
 
 # spawn the unit test

@@ -35,6 +35,8 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
+static sim_hal_id_t HID = { SPI_IO, 0 };
+
 /*===========================================================================*/
 /* Driver exported variables.                                                */
 /*===========================================================================*/
@@ -60,21 +62,21 @@ static void setSlave(uint16_t sspad) {
 
 static void receiveData(size_t n, void *rxbuf) {
   chSysUnlock();
-  sim_read(SPI_IO, rxbuf, n);
+  sim_read(&HID, rxbuf, n);
   chSysLock();
 }
 
 static void sendData(size_t n, void const *txbuf) {
-  sim_write(SPI_IO, (void*)txbuf, n);
+  sim_write(&HID, (void*)txbuf, n);
 }
 
 static uint16_t polledExchange(uint16_t frame) {
   uint16_t inFrame;
 
-  sim_write(SPI_IO, &frame, sizeof frame);
+  sim_write(&HID, &frame, sizeof frame);
   printf("to device (%hu): %hu\n", selectedSlave, frame);
 
-  sim_read(SPI_IO, &inFrame, sizeof inFrame);
+  sim_read(&HID, &inFrame, sizeof inFrame);
 
   return inFrame;
 }
