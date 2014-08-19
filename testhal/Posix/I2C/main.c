@@ -24,14 +24,14 @@
 #define tx_DEPTH  4
 
 static i2cflags_t errors = 0;
-static void led4off(void *arg) {
+/*static void led4off(void *arg) {
 
   (void)arg;
 
   // palClearPad(GPIOC, GPIOC_LED4);
   printf("led4 OFF\n");
 
-}
+}*/
 
 
 
@@ -77,7 +77,8 @@ static msg_t dummy_1_thread(void *arg)
         chThdSleepMilliseconds(32);
         msg_t status = RDY_OK;
         i2cAcquireBus(&I2CD1);
-        status = i2cMasterTransmitTimeout(&I2CD1, 0, rx_buf, rx_DEPTH, tx_buf,tx_DEPTH, tmo);
+        status = i2cMasterTransmitTimeout(&I2CD1, 0, rx_buf, rx_DEPTH, tx_buf
+                ,tx_DEPTH, tmo);
         i2cReleaseBus(&I2CD1);
         if(status != RDY_OK)
         {
@@ -96,7 +97,6 @@ static msg_t dummy_2_thread(void *arg)
     uint8_t tx_buf[2];
     while(TRUE){
         chThdSleepMilliseconds(32); 
-        int16_t t_int =0 , t_frac=0;
         msg_t status = RDY_OK;
         systime_t tmo = MS2ST(2);
         i2cAcquireBus(&I2CD1);

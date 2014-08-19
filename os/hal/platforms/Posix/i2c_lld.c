@@ -34,7 +34,7 @@
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
-
+static sim_hal_id_t HID = {I2C_IO, 0};
 /*===========================================================================*/
 /* Driver exported variables.                                                */
 /*===========================================================================*/
@@ -59,16 +59,14 @@ static void recieve_stream(uint8_t * rxbuf, size_t rxbyte)
 
 //   fgets(rxbuf, rxbyte,stdin);
 //
-   sim_read(SPI_IO, rxbuf, rxbyte);
+   sim_read(&HID, rxbuf, rxbyte);
    
-   printf("Recieving %d\n", rxbuf);
 
 }
 
 static void transmit_stream (const uint8_t *txbuf, size_t txbyte)
 {
-    printf("transmitting %d \n",txbuf);
-    sim_write(SPI_IO, txbuf,txbyte);
+    sim_write(&HID, (uint8_t*)txbuf, txbyte);
 
 }
 
