@@ -54,35 +54,9 @@ I2CDriver I2CD1;
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 
-static void recieve_stream(uint8_t * rxbuf, size_t rxbyte)
-{
-
-//   fgets(rxbuf, rxbyte,stdin);
-//
-   sim_read(&HID, rxbuf, rxbyte);
-   
-
-}
-
-static void transmit_stream (const uint8_t *txbuf, size_t txbyte)
-{
-    sim_write(&HID, (uint8_t*)txbuf, txbyte);
-
-}
 
 
-static void i2c_lld_safety_timeout(void *p)
-{
-    I2CDriver *i2cp = (I2CDriver *)p;
-    chSysLockFromIsr();
-    if(i2cp->thread){
-        Thread *tp = i2cp->thread;
-        i2cp->thread = NULL;
-        tp->p_u.rdymsg = RDY_TIMEOUT;
-        chSchReadyI(tp);
-    }
-        chSysUnlockFromIsr();
-}
+
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
@@ -168,24 +142,14 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
                                      uint8_t *rxbuf, size_t rxbytes,
                                      systime_t timeout) {
 
-   VirtualTimer vt;
    chDbgCheck((rxbytes > 1), "i2c_lld_master_recive_timeout");
-
-   if(timeout != TIME_INFINITE)
-   {
-       chVTSetI(&vt, timeout, i2c_lld_safety_timeout, (void *)i2cp);
-   }
-   chSysUnlock();
 
    i2cp->addr = addr << 1;
    i2cp->errors = 0;
 
-   recieve_stream(rxbuf, rxbytes);
+   sim_read_timeout(&HID, (void*)rxbuf, rxbytes,timeout);
+   printf("in Recieve\n");
 
-
-
-   i2cp->thread = chThdSelf();
-   chSchGoSleepS(THD_STATE_SUSPENDED);
 
   return RDY_TIMEOUT;
   
@@ -221,24 +185,14 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
                                       uint8_t *rxbuf, size_t rxbytes,
                                       systime_t timeout) {
 
-   VirtualTimer vt;
 
-  //if the timeout set the virtual timer and uses the function i2c_lld 
-   if(timeout != TIME_INFINITE)
-   {
-       chVTSetI(&vt, timeout, i2c_lld_safety_timeout, (void *)i2cp);
-   }
-   chSysUnlock();
 
    i2cp->addr = addr << 1;
    i2cp->errors = 0;
-
-   recieve_stream(rxbuf, rxbytes);
-
-   transmit_stream(txbuf, txbytes);
-
-   i2cp->thread = chThdSelf();
-   chSchGoSleepS(THD_STATE_SUSPENDED);
+   sim_read_timeout(&HID, (void*)rxbuf, rxbytes, timeout);
+   printf("in Recieve2\n");
+   
+   sim_write(&HID, (void*)txbuf, txbytes);
 
   return RDY_TIMEOUT;
 

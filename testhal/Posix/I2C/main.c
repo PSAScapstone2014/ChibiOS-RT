@@ -20,8 +20,8 @@
 #include "hal.h"
 
 #include "simio.h"
-#define rx_DEPTH  2
-#define tx_DEPTH  4
+#define rx_DEPTH  128
+#define tx_DEPTH  128
 
 static i2cflags_t errors = 0;
 /*static void led4off(void *arg) {
@@ -72,11 +72,11 @@ static msg_t dummy_1_thread(void *arg)
     uint8_t rx_buf[rx_DEPTH];
     uint8_t tx_buf[tx_DEPTH];
     while(TRUE){
-        systime_t tmo = MS2ST(4);
 
-        chThdSleepMilliseconds(32);
+        chThdSleepMilliseconds(1000);
         msg_t status = RDY_OK;
         i2cAcquireBus(&I2CD1);
+        systime_t tmo = 10000;
         status = i2cMasterTransmitTimeout(&I2CD1, 0, rx_buf, rx_DEPTH, tx_buf
                 ,tx_DEPTH, tmo);
         i2cReleaseBus(&I2CD1);
@@ -94,13 +94,13 @@ static msg_t dummy_2_thread(void *arg)
 {
     chRegSetThreadName("dummy2");
     (void)arg;
-    uint8_t tx_buf[2];
+    uint8_t tx_buf[tx_DEPTH];
     while(TRUE){
-        chThdSleepMilliseconds(32); 
+        chThdSleepMilliseconds(1000); 
         msg_t status = RDY_OK;
-        systime_t tmo = MS2ST(2);
+        systime_t tmo = 10000;
         i2cAcquireBus(&I2CD1);
-        status = i2cMasterReceiveTimeout(&I2CD1, 0, tx_buf, 2, tmo);
+        status = i2cMasterReceiveTimeout(&I2CD1, 0, tx_buf, tx_DEPTH, tmo);
         i2cReleaseBus(&I2CD1);
         if(status != RDY_OK){
             errors = i2cGetErrors(&I2CD1);
@@ -131,7 +131,7 @@ int main(void) {
   palSetPadMode(IOPORT2, 6, 17);
   chThdSleepMilliseconds(100);
   chThdCreateStatic(dummy_1, sizeof(dummy_1), NORMALPRIO, dummy_1_thread, NULL);
-  chThdCreateStatic(dummy_2, sizeof(dummy_2), NORMALPRIO, dummy_2_thread, NULL);
+//  chThdCreateStatic(dummy_2, sizeof(dummy_2), NORMALPRIO, dummy_2_thread, NULL);
   while (TRUE) {
     chThdSleepMilliseconds(5000);
   }
