@@ -40,8 +40,8 @@ else
   DADEFS += -DCORTEX_USE_FPU=FALSE
 endif
 
-# Disable LWIP
-DDEFS += -DLWIP_SOCKET=0
+# Enable simulator functions and disable lwIP
+DDEFS += -DSIMULATOR -DSIM_PREEMPT_REPLACE_FUNCTIONS -DLWIP_SOCKET=0
 
 # Output directory and files
 ifeq ($(BUILDDIR),)
@@ -85,7 +85,7 @@ ADEFS 	  = $(DADEFS) $(UADEFS)
 LIBS      = $(DLIBS) $(ULIBS)
 
 # Various settings
-MCFLAGS   = -m32 -DSIM_PREEMPT_REPLACE_FUNCTIONS
+MCFLAGS   = -m32
 ODFLAGS	  = -x --syms
 ASFLAGS   = $(MCFLAGS) -Wa,-amhls=$(LSTDIR)/$(notdir $(<:.s=.lst)) $(ADEFS)
 ASXFLAGS  = $(MCFLAGS) -Wa,-amhls=$(LSTDIR)/$(notdir $(<:.S=.lst)) $(ADEFS)

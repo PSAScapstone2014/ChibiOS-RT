@@ -48,11 +48,6 @@
 #define CH_ARCHITECTURE_SIMSTM32
 
 /**
- * Another macro defining the a simulated architecture into x86.
- */
-#define SIMULATOR
-
-/**
  * Name of the implemented architecture.
  */
 #define CH_ARCHITECTURE_NAME            "Simulator"

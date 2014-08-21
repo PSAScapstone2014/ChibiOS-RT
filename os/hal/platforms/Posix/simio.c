@@ -32,6 +32,8 @@
  * @{
  */
 
+#if defined(SIMULATOR) || defined(__DOXYGEN__)
+
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -49,15 +51,15 @@
 #include "sim_preempt.h"
 
 /**
- * globals to handle a multiplexed socket
+ * @brief   globals to handle a multiplexed socket
  */
 static msg_t readq[HID_COUNT][MB_QUEUE_SIZE];
 static Mailbox read_mb[HID_COUNT];
-static Mailbox write_mb[HID_COUNT]; /* TODO */
+// static Mailbox write_mb[HID_COUNT]; /* TODO */
 static WORKING_AREA(wap, 512);
 
 /**
- * @brief define default ports for HAL drivers
+ * @brief   Define default ports for HAL drivers
  */
 static struct sim_host_t {
   char*     ip_addr;
@@ -66,7 +68,7 @@ static struct sim_host_t {
 } sim_host = { "127.0.0.1", 27000, 0 };
 
 /**
- * @brief forward function declarations
+ * @brief   Forward function declarations
  */
 static char* hid2str(sim_hal_id_t*);
 static SOCKET _sim_socket(void);
@@ -74,7 +76,7 @@ static int _sim_connect(void);
 static msg_t read_thread(void *arg);
 
 /**
- * @brief configure IO multiplexing
+ * @brief   One time initialization of data structures
  *
  * @notapi
  */
@@ -90,8 +92,11 @@ static void _sim_init_once(void) {
 }
 
 /**
- * @brief collect host and port data from the command line
+ * @brief   Collect host and port data from the command line
  *
+ * @param[in] argc      command line argument count
+ * @param[in] argc      command line argument vector
+
  * @api
  */
 extern void sim_getopt(int argc, char **argv) {
@@ -136,20 +141,34 @@ static char* hid2str(sim_hal_id_t *hid) {
   }
 }
 
-static hid_t str2hid(char *qname) {
-  if (!strcmp(qname, "PAL_IO")) return PAL_IO;
-  else if (!strcmp(qname, "SD1_IO")) return SD1_IO;
-  else if (!strcmp(qname, "SD2_IO")) return SD2_IO;
-  else if (!strcmp(qname, "EXT_IO")) return EXT_IO;
-  else if (!strcmp(qname, "SPI_IO")) return SPI_IO;
-  else if (!strcmp(qname, "SDC_IO")) return SDC_IO;
-  else if (!strcmp(qname, "I2C_IO")) return I2C_IO;
-  eprintf("no such queue %s", qname);
+/**
+ * @brief get enum for hid string
+ *
+ * @notapi
+ */
+static hid_t str2hid(char *hid) {
+  if (!strcmp(hid, "PAL_IO")) return PAL_IO;
+  else if (!strcmp(hid, "SD1_IO")) return SD1_IO;
+  else if (!strcmp(hid, "SD2_IO")) return SD2_IO;
+  else if (!strcmp(hid, "EXT_IO")) return EXT_IO;
+  else if (!strcmp(hid, "SPI_IO")) return SPI_IO;
+  else if (!strcmp(hid, "SDC_IO")) return SDC_IO;
+  else if (!strcmp(hid, "I2C_IO")) return I2C_IO;
+  eprintf("no such queue %s", hid);
   return SIM_IO;
 }
 
 /**
- * @brief format data using simulator protocol and encode data
+ * @brief   Format data using the simulator protocol.
+ * @details Each message is formatted with a header followed
+ *          by a hexadecimal encoded string and newline.
+ * @note    This function allocates memory.
+ *
+ * @param[in] hid       hal id to use in the header
+ * @param[in] buf       the message data
+ * @param[in] bufsz     the size of buf
+ *
+ * @return              a newly allocated buffer
  *
  * @notapi
  */
@@ -171,6 +190,13 @@ static sim_buf_t* _sim_encode(sim_hal_id_t *hid, void *buf, size_t bufsz) {
   return code;
 }
 
+/**
+ * @brief   Decode hexadecimal encodings in place.
+ *
+ * @param[in,out] buf   the encoded data
+ *
+ * @notapi
+ */
 static void _sim_decode(sim_buf_t *buf) {
   char byte[3];
   size_t i;
@@ -185,6 +211,14 @@ static void _sim_decode(sim_buf_t *buf) {
   buf->dlen = i;
 }
 
+/**
+ * @brief   Post a message from a VHA to the reader queue
+ *          for consumption by a LLD.
+ *
+ * @param[in] msg       The message to post.
+ *
+ * @notapi
+ */
 static void _sim_enqueue(sim_msg_t *msg) {
   hid_t hid = str2hid(msg->header);
   msg_t status;
@@ -198,6 +232,19 @@ static void _sim_enqueue(sim_msg_t *msg) {
   };
 }
 
+/**
+ * @brief   Parse a buffer returned from read() into a message
+ *          structure.
+ * @details Read() may only return a partial buffer. This function
+ *          holds the message pointer until such time that the
+ *          read has been completed and then queues it into the
+ *          LLD reader queue.
+ *
+ * @param[in] buf       the raw data
+ * @param[in,out] mptr  pointer to a pointer to a message
+ *
+ * @notapi
+ */
 static void parse_buf(sim_buf_t *buf, sim_msg_t **mptr) {
   sim_msg_t *msg = *mptr;
   size_t i;
@@ -231,6 +278,11 @@ static void parse_buf(sim_buf_t *buf, sim_msg_t **mptr) {
   }
 }
 
+/**
+ * @brief   The thread responsible for reading from a VHA.
+ *
+ * @notapi
+ */
 static msg_t read_thread(void *arg) {
   sim_msg_t *msg = sim_msg_alloc(MSG_BLOCK_SIZE);
   sim_buf_t *buf = sim_buf_alloc(MSG_BLOCK_SIZE);
@@ -268,7 +320,15 @@ static msg_t read_thread(void *arg) {
 }
 
 /**
- * @brief fetch a message from the queue and read it until empty
+ * @brief   Fetch the next message from the queue and drain its
+ *          buffer to emulate an actual read() call
+ *
+ * @param[in] hid       hal id
+ * @param[out] buf      buffer to be filled
+ * @param[in] bufsz     the size of buf
+ * @param[in] timeout   maximum time to wait before returning
+ *
+ * @return              the number of bytes read or, if negative an error
  *
  * @api
  */
@@ -300,8 +360,14 @@ extern ssize_t sim_read_timeout(sim_hal_id_t *hid, void *buf, size_t bufsz, int 
 }
 
 /**
- * @brief encode and write buffer to multiplexed IO stream
+ * @brief   encode and write buffer to multiplexed IO stream
  *
+ * @param[in] hid       hal identifier
+ * @param[in] buf       data to be written to the VHA
+ * @param[in] bufsz     size of buf
+ *
+ * @return              the number of byte written or negative if an
+ *                      error occurred
  * @api
  */
 extern int sim_write(sim_hal_id_t *hid, void *buf, size_t bufsz) {
@@ -341,8 +407,15 @@ extern int sim_write(sim_hal_id_t *hid, void *buf, size_t bufsz) {
 }
 
 /**
- * @brief write formatted data to io stream
+ * @brief   write formatted data to io stream
+ * @note    the output may not exceed SIM_PRINTF_MAX bytes
  *
+ * @param[in] hid       hal identifier
+ * @param[in] fmt       printf-style format string
+ * @param[in] ...       variable arguments
+ *
+ * @return              the number of byte written or negative if an
+ *                      error occurred
  * @api
  */
 extern int sim_printf(sim_hal_id_t *hid, char *fmt, ...) {
@@ -360,7 +433,10 @@ extern int sim_printf(sim_hal_id_t *hid, char *fmt, ...) {
 }
 
 /**
- * @brief disconnect io stream
+ * @brief   Disconnect IO stream
+ * @note    Will reconnect if another IO call is used
+ *
+ * @return              0 on success, -1 on failure
  *
  * @api
  */
@@ -371,7 +447,11 @@ extern int sim_disconnect() {
 }
 
 /**
- * @brief establish network io
+ * @brief   Establish network IO
+ * @note    Spawns VHA reader thread. Implicitly
+ *          called from other IO functions.
+ *
+ * @return              0 on success, -1 on failure
  *
  * @notapi
  */
@@ -413,7 +493,9 @@ static int _sim_connect() {
 }
 
 /**
- * @brief get a new tcp socket
+ * @brief   Initialize a new TCP socket
+ *
+ * @return              A socket number
  *
  * @notapi
  */
@@ -433,5 +515,7 @@ static SOCKET _sim_socket() {
   }
   return sock;
 }
+
+#endif /* SIMULATOR */
 
 /** @} */
