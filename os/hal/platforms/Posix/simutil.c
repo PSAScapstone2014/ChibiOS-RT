@@ -32,6 +32,8 @@
  * @{
  */
 
+#if defined(SIMULATOR) || defined(__DOXYGEN__)
+
 #include <stdlib.h>
 #include <string.h>
 #include "simutil.h"
@@ -39,7 +41,12 @@
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
 /**
- * @brief get a new message struct
+ * @brief   Allocate a new message struct
+ * @note    Return value must be freed
+ *
+ * @param[in] len       initial buffer size
+ *
+ * @return              The message
  *
  * @notapi
  */
@@ -66,14 +73,29 @@ extern sim_buf_t* sim_buf_alloc(size_t len) {
   return buf;
 }
 
+/**
+ * @brief   Increase the size of an allocated buffer
+ *
+ * @param[in,out] buf   The buffer to reallocate
+ * @param[in] len       The new size of the buffer
+ *
+ * @notapi
+ */
 static void sim_buf_realloc(sim_buf_t *buf, size_t len) {
   buf->data = realloc(buf->data, len);
+
+  /* move the data pointer to the start *
+   * of the newly allocated area        */
   sim_buf_setpos(buf, buf->dlen);
+
+  /* update buffer size */
   buf->dsz = len;
 }
 
 /**
- * @brief free all message data
+ * @brief   Free all message data
+ *
+ * @param[in] buf       The pointer to free
  *
  * @notapi
  */
@@ -86,6 +108,15 @@ extern void sim_buf_free(sim_buf_t *buf) {
   free(buf);
 }
 
+/**
+ * @brief   Append a byte to a buffer
+ * @note    Implicitly expands the buffer if necessary
+ *
+ * @param[in,out] buf   The buffer to write
+ * @param[in] c         The byte to append
+ *
+ * @notapi
+ */
 extern void sim_buf_putc(sim_buf_t *buf, char c) {
   if (buf->dlen == buf->dsz) {
     sim_buf_realloc(buf, buf->dsz + MSG_BLOCK_SIZE);
@@ -99,7 +130,10 @@ extern void sim_buf_putc(sim_buf_t *buf, char c) {
 }
 
 /**
- * @brief append null terminated string to the message
+ * @brief   Append null terminated string to the message
+ *
+ * @param[in,out] buf   The buffer to write
+ * @param[in] str       The string to append
  *
  * @notapi
  */
@@ -108,10 +142,29 @@ extern void sim_buf_puts(sim_buf_t *buf, char *str) {
     sim_buf_putc(buf, *str++);
 }
 
+/**
+ * @brief   Update a buffer data pointer
+ *
+ * @param[in,out] buf   The buffer to update
+ * @param[in] pos       The offset from the start of the buffer
+ *
+ * @notapi
+ */
 extern void sim_buf_setpos(sim_buf_t *buf, off_t pos) {
     buf->dptr = buf->data + pos;
 }
 
+/**
+ * @brief   Read data from a buffer
+ *
+ * @param[in] ibuf      The source buffer
+ * @param[out] obuf     The destination buffer
+ * @param[in] obufsz    The size of the destination buffer
+ *
+ * @return              the number of bytes read
+ *
+ * @notapi
+ */
 extern size_t sim_buf_read(sim_buf_t *ibuf, void *obuf, size_t obufsz) {
   size_t nb = MIN(ibuf->dlen, obufsz);
   memcpy(obuf, ibuf->dptr, nb);
@@ -120,12 +173,26 @@ extern size_t sim_buf_read(sim_buf_t *ibuf, void *obuf, size_t obufsz) {
   return nb;
 }
 
+/**
+ * @brief   Is the buffer empty?
+ *
+ * @param[in] buf       The buffer to check
+ *
+ * @return              1 if EOF, 0 if not
+ *
+ * @notapi
+ */
 extern int sim_buf_eof(sim_buf_t *buf) {
     return !buf->dlen;
 }
 
 /**
- * @brief
+ * @brief   Allocate a message structure
+ * @note    Returned pointer must be freed
+ *
+ * @param[in] len       The size of the buffer within the message
+ *
+ * @return              A pointer to the message structure
  *
  * @notapi
  */
@@ -150,7 +217,9 @@ extern sim_msg_t* sim_msg_alloc(size_t len) {
 }
 
 /**
- * @brief
+ * @brief   Free a message structure
+ *
+ * @param[in,out] msg   The pointer to be freed
  *
  * @notapi
  */
@@ -158,5 +227,7 @@ extern void sim_msg_free(sim_msg_t *msg) {
   sim_buf_free(msg->buf);
   free(msg);
 }
+
+#endif /* SIMULATOR */
 
 /** @} */

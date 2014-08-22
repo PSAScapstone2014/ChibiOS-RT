@@ -35,6 +35,8 @@
 #ifndef SIMIO_H
 #define SIMIO_H
 
+#if defined(SIMULATOR) || defined(__DOXYGEN__)
+
 #include <stdio.h>
 #include "ch.h"
 
@@ -44,7 +46,7 @@
 /* maximum pending reads/writes */
 #define MB_QUEUE_SIZE 10
 
-/*  */
+/* HAL Identifiers */
 typedef enum {
   SIM_IO,   /* Do not initialize the first element to anything other than 0 */
   PAL_IO,
@@ -62,9 +64,7 @@ typedef struct {
   uint32_t  sid;
 } sim_hal_id_t;
 
-typedef void (*simio_cb_t)(char *buf, void *arg);
-
-/* configure */
+/* configure based on command line arguments */
 extern void sim_getopt(int argc, char **argv);
 
 /* read data sent to the HAL */
@@ -78,6 +78,7 @@ extern int sim_printf(sim_hal_id_t *hid, char *fmt, ...);
 /* shutdown */
 extern int sim_disconnect(void);
 
+#endif /* SIMULATOR */
 #endif /* SIMIO_H */
 
 /** @} */

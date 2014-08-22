@@ -25,7 +25,7 @@
 */
 
 /**
- * @file    simio.h
+ * @file    simutil.h
  * @brief   Helper macros and data structures.
  *
  * @addtogroup SIMUTIL
@@ -35,10 +35,12 @@
 #ifndef SIMUTIL_H
 #define SIMUTIL_H
 
+#if defined(SIMULATOR) || defined(__DOXYGEN__)
+
 #include <stdio.h>
 
 /**
- * @brief console errors
+ * @brief   Console errors
  *
  * @notapi
  */
@@ -49,7 +51,7 @@
 #define DUMMY_HEADER "XXXXXX_XX -1234567890"
 
 /**
- * @brief io message data
+ * @brief   IO message data
  */
 typedef struct {
   char          *data;
@@ -82,6 +84,7 @@ extern int sim_buf_eof(sim_buf_t*);
 extern sim_msg_t* sim_msg_alloc(size_t);
 extern void sim_msg_free(sim_msg_t*);
 
+#endif /* SIMULATOR */
 #endif /* SIMUTIL_H */
 
 /** @} */
