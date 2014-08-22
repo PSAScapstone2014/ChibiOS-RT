@@ -329,10 +329,8 @@ static msg_t read_thread(void *arg) {
  * @param[in] timeout   maximum time to wait before returning
  *
  * @return              the number of bytes read or, if negative an error
- *
- * @api
  */
-extern ssize_t sim_read_timeout_fetch(sim_hal_id_t *hid, void *buf, size_t bufsz,
+static ssize_t sim_read_timeout_fetch(sim_hal_id_t *hid, void *buf, size_t bufsz,
                                       int timeout, msg_t (*fetch)(Mailbox*, msg_t*, systime_t)) {
   static sim_msg_t *msg = NULL;
   msg_t status = RDY_OK;
