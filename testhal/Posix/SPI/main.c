@@ -52,7 +52,7 @@ static msg_t spi_thread_1(void *p) {
                 txbuf, rxbuf);          /* Atomic transfer operations.      */
     spiUnselect(&SPID1);                /* Slave Select de-assertion.       */
     spiReleaseBus(&SPID1);              /* Ownership release.               */
-    chThdSleepMilliseconds(500);
+    chThdSleep(S2ST(1));
   }
   return 0;
 }
@@ -74,7 +74,7 @@ static msg_t spi_thread_2(void *p) {
                 txbuf, rxbuf);          /* Atomic transfer operations.      */
     spiUnselect(&SPID1);                /* Slave Select de-assertion.       */
     spiReleaseBus(&SPID1);              /* Ownership release.               */
-    chThdSleepMilliseconds(500);
+    chThdSleep(S2ST(1));
   }
   return 0;
 }
@@ -107,36 +107,40 @@ int main(void) {
   for (i = 0; i < sizeof(txbuf); i++)
     txbuf[i] = (uint8_t)i;
 
+  spiAcquireBus(&SPID1);              /* Acquire ownership of the bus.    */
+  spiStart(&SPID1, &spicfg);          /* Setup transfer parameters.       */
+  spiSelect(&SPID1);                  /* Slave Select assertion.          */
+
+  spiExchange(&SPID1, 512, txbuf, rxbuf);
+  spiStartExchange(&SPID1, 512, txbuf, rxbuf);
+
+  spiSend(&SPID1, sizeof txbuf, txbuf);
+  spiStartSend(&SPID1, sizeof txbuf, txbuf);
+
+  spiReceive(&SPID1, sizeof rxbuf, rxbuf);
+  spiStartReceive(&SPID1, sizeof rxbuf, rxbuf);
+
+  if ((frame = spiPolledExchange(&SPID1, 0xaa)) != 0xaa) {
+    fprintf(stderr, "ERROR spiPolledExchange expected 0xaa got 0x%x", frame);
+    exit(1);
+  }
+
+  spiUnselect(&SPID1);                /* Slave Select de-assertion.       */
+  spiReleaseBus(&SPID1);              /* Ownership release.               */
+
   /*
    * Starting the transmitter and receiver threads.
    */
-  // chThdCreateStatic(spi_thread_1_wa, sizeof(spi_thread_1_wa),
-  //                   NORMALPRIO + 1, spi_thread_1, NULL);
-  // chThdCreateStatic(spi_thread_2_wa, sizeof(spi_thread_2_wa),
-  //                   NORMALPRIO + 1, spi_thread_2, NULL);
+  chThdCreateStatic(spi_thread_1_wa, sizeof(spi_thread_1_wa),
+                    NORMALPRIO + 1, spi_thread_1, NULL);
+  chThdCreateStatic(spi_thread_2_wa, sizeof(spi_thread_2_wa),
+                    NORMALPRIO + 1, spi_thread_2, NULL);
 
   /*
    * Normal main() thread activity, in this demo it does nothing.
    */
   while (TRUE) {
-    spiAcquireBus(&SPID1);              /* Acquire ownership of the bus.    */
-    spiStart(&SPID1, &spicfg);          /* Setup transfer parameters.       */
-    spiSelect(&SPID1);                  /* Slave Select assertion.          */
-
-    spiExchange(&SPID1, 512, txbuf, rxbuf);
-
-    spiSend(&SPID1, sizeof txbuf, txbuf);
-
-    spiReceive(&SPID1, sizeof rxbuf, rxbuf);
-
-    if ((frame = spiPolledExchange(&SPID1, 0xaa)) != 0xaa) {
-      fprintf(stderr, "ERROR spiPolledExchange expected 0xaa got 0x%x", frame);
-      exit(1);
-    }
-
-    spiUnselect(&SPID1);                /* Slave Select de-assertion.       */
-    spiReleaseBus(&SPID1);              /* Ownership release.               */
-    chThdSleepMilliseconds(S2ST(1));
+    chThdSleep(S2ST(1));
   }
   return 0;
 }

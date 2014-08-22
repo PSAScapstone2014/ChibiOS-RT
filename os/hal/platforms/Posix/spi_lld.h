@@ -138,6 +138,13 @@ struct SPIDriver {
 /* Driver macros.                                                            */
 /*===========================================================================*/
 
+/* SPI_USE_WAIT is unsupported in the simulator.
+ * Use the async instructions instead.            */
+#undef SPI_USE_WAIT
+#define spiExchange(a,b,c,d) spiStartExchange((a),(b),(c),(d))
+#define spiSend(a,b,c) spiStartSend((a),(b),(c))
+#define spiReceive(a,b,c) spiStartReceive((a),(b),(c))
+
 /*===========================================================================*/
 /* External declarations.                                                    */
 /*===========================================================================*/

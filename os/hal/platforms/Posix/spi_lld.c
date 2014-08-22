@@ -162,8 +162,10 @@ void spi_lld_unselect(SPIDriver *spip) {
  * @notapi
  */
 void spi_lld_ignore(SPIDriver *spip, size_t n) {
-  (void)spip;
-  (void)n;
+  sim_printf(&HID, "ignore %d", n);
+
+  /* ready for the next message */
+  _spi_isr_code(spip);
 }
 
 /**
@@ -191,16 +193,11 @@ void spi_lld_exchange(SPIDriver *spip, size_t n,
   /* write exchange message */
   sim_write(&HID, (void*)txbuf, n);
 
-  /* get read lock before spawning thread */
-  chMtxLockS(&read_lock);
-
-  /* pend for completion signal from VHA */
-  chSchWakeupS(chThdCreateI(wsp, sizeof(wsp), NORMALPRIO, complete_thread, (void*)spip), RDY_OK);
-
   /* read in exchange message */
   sim_readS(&HID, rxbuf, n);
 
-  chMtxUnlockS();
+  /* ready for the next message */
+  _spi_isr_code(spip);
 }
 
 /**
@@ -221,8 +218,8 @@ void spi_lld_send(SPIDriver *spip, size_t n, const void *txbuf) {
   sim_printf(&HID, "send");
   sim_write(&HID, (void*)txbuf, n);
 
-  /* pend for completion signal from VHA */
-  chSchWakeupS(chThdCreateI(wsp, sizeof(wsp), NORMALPRIO, complete_thread, (void*)spip), RDY_OK);
+  /* ready for the next message */
+  _spi_isr_code(spip);
 }
 
 /**
@@ -243,8 +240,8 @@ void spi_lld_receive(SPIDriver *spip, size_t n, void *rxbuf) {
   sim_printf(&HID, "receive");
   sim_readS(&HID, rxbuf, n);
 
-  /* pend for completion signal from VHA */
-  chSchWakeupS(chThdCreateI(wsp, sizeof(wsp), NORMALPRIO, complete_thread, (void*)spip), RDY_OK);
+  /* ready for the next message */
+  _spi_isr_code(spip);
 }
 
 /**
