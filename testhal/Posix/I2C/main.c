@@ -24,35 +24,6 @@
 #define tx_DEPTH  128
 
 static i2cflags_t errors = 0;
-/*static void led4off(void *arg) {
-
-  (void)arg;
-
-  // palClearPad(GPIOC, GPIOC_LED4);
-  printf("led4 OFF\n");
-
-}*/
-
-
-
-/* Triggered when the button is pressed or released. The LED4 is set to ON.*/
-/*static void extcb1(EXTDriver *extp, expchannel_t channel) {
-  static VirtualTimer vt4;
-
-  (void)extp;
-  (void)channel;
-
-  // palSetPad(GPIOC, GPIOC_LED4);
-  printf("led4 ON\n");
-
-  chSysLockFromIsr();
-  if (chVTIsArmedI(&vt4))
-    chVTResetI(&vt4);*/
-  /* LED4 set to OFF after 200mS.*/
-/*  chVTSetI(&vt4, MS2ST(200), led4off, NULL);
-  chSysUnlockFromIsr();
-}*/
-
 
 
 
