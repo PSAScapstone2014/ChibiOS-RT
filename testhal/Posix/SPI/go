@@ -10,25 +10,66 @@ LLD_NAME = 'SPI_IO'
 def sim_format(lld, data):
   return '%s\t%s\n' % (lld , data.encode('hex'))
 
+def sim_decode(line):
+  # split the line based on the simio protocol
+  source, code = line.strip().split('\t', 1)
+
+  # decode simio data
+  data = code.decode('hex')
+  return source, data
+
 class SIMIO(StreamRequestHandler):
   def handle(self):
     print '[SIMIO] CONNECT'
-    threading.Thread(target=self.read_thread).start()
-    while True:
-      self.write_line()
-
-  def write_line(self):
-    data = sys.stdin.readline()
-    print '[%s] -> %r' % (LLD_NAME, data)
-    msg = sim_format(LLD_NAME, data)
-    self.wfile.write(msg)
-
-  def read_thread(self):
     while True:
       line = self.rfile.readline()
-      header, code = line.strip().split('\t', 1)
-      data = code.decode('hex')
-      sys.stdout.write('[%s] <- %r\n' % (header, data))
+      source, data = sim_decode(line)
+
+      sys.stdout.write('[%s] <- %r\n' % (source, data))
+
+      if source != 'SPI_IO':
+        continue
+
+      if data.startswith('select '):
+        continue
+      if data.startswith('unselect '):
+        continue
+
+      if data == 'exchange':
+        # read and echo data back to spi
+        data = self.spi_read()
+        self.spi_write(data)
+        self.spi_complete()
+
+      if data == 'polled_exchange':
+        data = self.spi_read()
+        self.spi_write(data)
+
+      if data == 'send':
+        self.spi_read()
+        self.spi_complete()
+
+      if data == 'receive':
+        self.spi_write('data')
+        self.spi_complete()
+
+  def spi_read(self):
+    # read data
+    line = self.rfile.readline()
+    source, data = sim_decode(line)
+    sys.stdout.write('[%s] <- %r\n' % (source, data))
+    return data
+
+  def spi_write(self, data):
+    sys.stdout.write('[%s] -> %r\n' % ('SPI_IO', data))
+    msg = sim_format('SPI_IO', data)
+    self.wfile.write(msg)
+
+  def spi_complete(self):
+    # signal completion
+    sys.stdout.write('[%s] -> %r\n' % ('SPI_IO', '\x00'))
+    msg = sim_format('SPI_IO', '\x00')
+    self.wfile.write(msg)
 
 # prevent bind errors on relaunch
 TCPServer.allow_reuse_address = True

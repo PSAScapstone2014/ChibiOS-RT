@@ -69,7 +69,9 @@ extern void sim_getopt(int argc, char **argv);
 
 /* read data sent to the HAL */
 extern ssize_t sim_read_timeout(sim_hal_id_t *hid, void *buf, size_t bufsz, int timeout);
+extern ssize_t sim_read_timeoutS(sim_hal_id_t *hid, void *buf, size_t bufsz, int timeout);
 #define sim_read(a,b,c) sim_read_timeout((a),(b),(c),TIME_INFINITE)
+#define sim_readS(a,b,c) sim_read_timeoutS((a),(b),(c),TIME_INFINITE)
 
 /* write data from the HAL */
 extern ssize_t sim_write(sim_hal_id_t *hid, void *buf, size_t bufsz);
