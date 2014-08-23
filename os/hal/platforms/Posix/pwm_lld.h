@@ -53,15 +53,6 @@
 #endif
 /** @} */
 
-#define PWM_OUTPUT_MASK                 0x0F
-#define PWM_OUTPUT_DISABLED             0x00
-#define PWM_OUTPUT_ACTIVE_HIGH          0x01 
-#define PWM_OUTPUT_ACTIVE_LOW           0x02
-
-#define PWM_OUTPUT_LEFT                 0x00000000
-
-
-
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
@@ -84,7 +75,7 @@ typedef uint8_t pwmchannel_t;
  * @brief   PWM counter type.
  */
 typedef uint16_t pwmcnt_t;
-//copy of tim registers block
+
 /**
  * @brief   PWM driver channel configuration structure.
  * @note    Some architectures may not be able to support the channel mode
@@ -135,8 +126,6 @@ typedef struct {
   /* End of the mandatory fields.*/
 } PWMConfig;
 
-
-
 /**
  * @brief   Structure representing an PWM driver.
  * @note    Implementations may extend this structure to contain more,
@@ -159,11 +148,6 @@ struct PWMDriver {
   PWM_DRIVER_EXT_FIELDS
 #endif
   /* End of the mandatory fields.*/
-  //width channels 
-  uint32_t                  width[PWM_CHANNELS];
-  //Timer base clock
-  uint32_t                  clock;
-  uint32_t                  psc; 
 };
 
 /*===========================================================================*/

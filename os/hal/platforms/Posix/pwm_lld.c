@@ -48,6 +48,8 @@ PWMDriver PWMD1;
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
 
+sim_hal_id_t HID = { PWM_IO, 0 };
+
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
@@ -66,12 +68,10 @@ PWMDriver PWMD1;
  * @notapi
  */
 void pwm_lld_init(void) {
-
 #if PLATFORM_PWM_USE_PWM1
   /* Driver initialization.*/
   pwmObjectInit(&PWMD1);
-  //allocate the sim 
-    PWMD1.clock = 1000000;
+
 #endif /* PLATFORM_PWM_USE_PWM1 */
 }
 
@@ -83,18 +83,7 @@ void pwm_lld_init(void) {
  * @notapi
  */
 void pwm_lld_start(PWMDriver *pwmp) {
-  
-  if (pwmp->state == PWM_STOP) {
-    /* Enables the peripheral.*/
-#if PLATFORM_PWM_USE_PWM1
-    if (&PWMD1 == pwmp) {
-        
-
-    }
-#endif /* PLATFORM_PWM_USE_PWM1 */
-  }
-  /* Configures the peripheral.*/
-  pwmp->psc = (pwmp->clock/pwmp->config->frequency)-1;
+  (void)pwmp;
 }
 
 /**
@@ -105,18 +94,8 @@ void pwm_lld_start(PWMDriver *pwmp) {
  * @notapi
  */
 
-//emulate pins..
 void pwm_lld_stop(PWMDriver *pwmp) {
-  uint32_t psc;
-  if (pwmp->state == PWM_READY) {
-    /* Resets the peripheral.*/
-    /* Disables the peripheral.*/
-#if PLATFORM_PWM_USE_PWM1
-    if (&PWMD1 == pwmp) {
-
-    }
-#endif /* PLATFORM_PWM_USE_PWM1 */
-  }
+  (void)pwmp;
 }
 
 /**
@@ -137,11 +116,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
  */
 void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
   (void)pwmp;
-  (void)period;
-//change the period of the pwm   
-   chDbgCheck(pwmp->state != PWM_READY, 
-                "PWM not started");
-   pwmp->period = period; 
+  sim_printf(&HID, "period %hd", period);
 }
 
 /**
@@ -161,13 +136,8 @@ void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
 void pwm_lld_enable_channel(PWMDriver *pwmp,
                             pwmchannel_t channel,
                             pwmcnt_t width) {
-
   (void)pwmp;
-  (void)channel;
-  (void)width;
-  pwmp->width[channel] = width; 
-
- 
+  sim_printf(&HID, "enable channel %hhd width %hd", channel, width);
 }
 
 /**
@@ -185,12 +155,8 @@ void pwm_lld_enable_channel(PWMDriver *pwmp,
  * @notapi
  */
 void pwm_lld_disable_channel(PWMDriver *pwmp, pwmchannel_t channel) {
-
   (void)pwmp;
-  (void)channel;
-  pwmp->width[channel] = 0; 
-
-
+  sim_printf(&HID, "disable channel %hhd", channel);
 }
 
 #endif /* HAL_USE_PWM */
