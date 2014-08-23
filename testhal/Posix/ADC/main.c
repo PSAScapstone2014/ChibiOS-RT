@@ -45,22 +45,19 @@ static const ADCConversionGroup adccfg_1 ={
     3,
     8
 };
-/*LED blinker thread*/
-static WORKING_AREA(dummy_led, 128);
-static msg_t dummy_Thread1(void *arg){
-    (void)arg;
+static WORKING_AREA(dummy_1, 128);
+static msg_t led_thread(void *arg)
+{
+    (void)arg; 
     chRegSetThreadName("blinker");
     while(TRUE){
-        palSetPad(GPIOD, GPIOD_LED5);
+        palSetPad(IOPORT1,0);
         chThdSleepMilliseconds(500);
-        palClearPad(GPIOD, GPIOD_LED5);
+        palClearPad(IOPORT1, 0);
         chThdSleepMilliseconds(500);
-
     }
-    return -1;
 }
-/*
- * Application entry point.
+ /* Application entry point.
  */
 int main(void) {
 
@@ -73,8 +70,7 @@ int main(void) {
    */
   halInit();
   chSysInit();
-  palSetGroupMode(GPIOC, PAL_PORT_BIT(1) | PAL_PORT_BIT(2), 0, 5);
-  chThdCreateStatic(dummy_led, sizeof(dummy_led), NORMALPRIO, dummy_Thread1, NULL);
+  chThdCreateStatic(dummy_1, sizeof(dummy_1), NORMALPRIO, led_thread, NULL);
  //Starting the adc driver
   adcStart(&ADCD1, NULL);
   //single buffer
@@ -82,14 +78,13 @@ int main(void) {
   adcStartConversion(&ADCD1, &adccfg,sample_2,DEPTH);
 
   chThdSleepMilliseconds(1000);
+
   //circular buffer
   adcStartConversion(&ADCD1, &adccfg_1,sample_1,DEPTH);
  
   while (TRUE) {
-     if(palReadPad(GPIOA, 0)){
+    chThdSleepMilliseconds(10000);
           adcStopConversion(&ADCD1);
 
-     }
-    chThdSleepMilliseconds(500);
   }
 }

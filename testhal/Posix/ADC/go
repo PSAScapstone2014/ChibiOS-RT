@@ -1,0 +1,33 @@
+#!/usr/bin/env python
+from SocketServer import StreamRequestHandler, TCPServer
+import subprocess
+import threading
+import time
+import sys
+
+LLD_NAME = 'EXT_IO'
+CHANNEL = '\x00'
+BUTTON_DELAY = 1
+
+def sim_format(lld, data):
+  return '%s\t%s\n' % (lld , data.encode('hex'))
+
+class SIMIO(StreamRequestHandler):
+  def handle(self):
+    print '[SIMIO] CONNECT'
+    for line in self.rfile:
+        header, code = line.strip().split('\t',1)
+        data = code.decode('hex')
+        sys.stdout.write('[%s] <- %s' %(header,data))
+
+
+# prevent bind errors on relaunch
+TCPServer.allow_reuse_address = True
+
+# listen for simio connections
+simio = TCPServer(('localhost', 27000), SIMIO)
+simio_thread = threading.Thread(target=simio.handle_request)
+simio_thread.start()
+
+# spawn the unit test
+subprocess.check_call(['./ch'])
