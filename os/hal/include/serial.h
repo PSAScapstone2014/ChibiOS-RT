@@ -156,7 +156,11 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_put_would_block) || defined(__DOXYGEN__)
 #define sdPutWouldBlock(sdp) chOQIsFullI(&(sdp)->oqueue)
+#else
+#define sdPutWouldBlock(sdp) serial_lld_put_would_block((sdp))
+#endif
 
 /**
  * @brief   Direct input check on a @p SerialDriver.
@@ -168,7 +172,11 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_get_would_block) || defined(__DOXYGEN__)
 #define sdGetWouldBlock(sdp) chIQIsEmptyI(&(sdp)->iqueue)
+#else
+#define sdGetWouldBlock(sdp) serial_lld_get_would_block((sdp))
+#endif
 
 /**
  * @brief   Direct write to a @p SerialDriver.
@@ -180,7 +188,11 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_put) || defined(__DOXYGEN__)
 #define sdPut(sdp, b) chOQPut(&(sdp)->oqueue, b)
+#else
+#define sdPut(sdp, b) serial_lld_put((sdp), (b))
+#endif
 
 /**
  * @brief   Direct write to a @p SerialDriver with timeout specification.
@@ -192,7 +204,11 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_put_timeout) || defined(__DOXYGEN__)
 #define sdPutTimeout(sdp, b, t) chOQPutTimeout(&(sdp)->oqueue, b, t)
+#else
+#define sdPutTimeout(sdp, b, t) serial_lld_put_timeout((sdp), (b), (t))
+#endif
 
 /**
  * @brief   Direct read from a @p SerialDriver.
@@ -204,7 +220,11 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_get) || defined(__DOXYGEN__)
 #define sdGet(sdp) chIQGet(&(sdp)->iqueue)
+#else
+#define sdGet(sdp) serial_lld_get((sdp))
+#endif
 
 /**
  * @brief   Direct read from a @p SerialDriver with timeout specification.
@@ -216,7 +236,11 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_get_timeout) || defined(__DOXYGEN__)
 #define sdGetTimeout(sdp, t) chIQGetTimeout(&(sdp)->iqueue, t)
+#else
+#define sdGetTimeout(sdp, t) serial_lld_get_timeout((sdp), (t))
+#endif
 
 /**
  * @brief   Direct blocking write to a @p SerialDriver.
@@ -246,8 +270,12 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_write_timeout) || defined(__DOXYGEN__)
 #define sdWriteTimeout(sdp, b, n, t)                                        \
   chOQWriteTimeout(&(sdp)->oqueue, b, n, t)
+#else
+#define sdWriteTimeout(sdp, b, n, t) serial_lld_write_timeout((sdp), (b), (n), (t))
+#endif
 
 /**
  * @brief   Direct non-blocking write to a @p SerialDriver.
@@ -259,8 +287,12 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_async_write) || defined(__DOXYGEN__)
 #define sdAsynchronousWrite(sdp, b, n)                                      \
   chOQWriteTimeout(&(sdp)->oqueue, b, n, TIME_IMMEDIATE)
+#else
+#define sdAsynchronousWrite(sdp, b, n) serial_lld_async_write((sdp), (b), (n))
+#endif
 
 /**
  * @brief   Direct blocking read from a @p SerialDriver.
@@ -307,8 +339,12 @@ struct SerialDriver {
  *
  * @api
  */
+#if !defined(serial_lld_async_read) || defined(__DOXYGEN__)
 #define sdAsynchronousRead(sdp, b, n)                                       \
   chIQReadTimeout(&(sdp)->iqueue, b, n, TIME_IMMEDIATE)
+#else
+#define sdAsynchronousRead(sdp, b, n) serial_lld_async_read((sdp), (b), (n))
+#endif
 /** @} */
 
 /*===========================================================================*/

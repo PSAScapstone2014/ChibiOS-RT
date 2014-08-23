@@ -51,38 +51,42 @@ SPIDriver SPID1;
 /*===========================================================================*/
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
-static const uint16_t NO_SLAVE_SET = 0;
-static uint16_t selectedSlave = 0;
+static WORKING_AREA(wsp, 128);
+MUTEX_DECL(read_lock);
+
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
-static void setSlave(uint16_t sspad) {
-  selectedSlave = sspad;
-}
 
-static void receiveData(size_t n, void *rxbuf) {
-  chSysUnlock();
-  sim_read(&HID, rxbuf, n);
-  chSysLock();
-}
-
-static void sendData(size_t n, void const *txbuf) {
-  sim_write(&HID, (void*)txbuf, n);
-}
-
-static uint16_t polledExchange(uint16_t frame) {
-  uint16_t inFrame;
-
-  sim_write(&HID, &frame, sizeof frame);
-  printf("to device (%hu): %hu\n", selectedSlave, frame);
-
-  sim_read(&HID, &inFrame, sizeof inFrame);
-
-  return inFrame;
-}
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
+
+/**
+ * @brief   Thread waits for complete signal from VHA
+ * @details SPI threads are put to sleep to wait for the driver
+ *          to complete an operation. This is handled by reading
+ *          a single byte from the VHA to signal completion and
+ *          then waking up the thread.
+ */
+static msg_t complete_thread(void *arg) {
+  SPIDriver *spip = (SPIDriver*)arg;
+  uint8_t c;
+
+  /* only one reader at a time */
+  chMtxLock(&read_lock);
+
+  int nb = sim_read(&HID, &c, sizeof c);
+  if (nb > 0) {
+    CH_IRQ_PROLOGUE();
+    _spi_isr_code(spip);
+    CH_IRQ_EPILOGUE();
+  }
+
+  chMtxUnlock();
+
+  return 0;
+}
 
 /*===========================================================================*/
 /* Driver exported functions.                                                */
@@ -109,17 +113,7 @@ void spi_lld_init(void) {
  * @notapi
  */
 void spi_lld_start(SPIDriver *spip) {
-
-  if (spip->state == SPI_STOP) {
-    /* Enables the peripheral.*/
-#if PLATFORM_SPI_USE_SPI1
-    if (&SPID1 == spip) {
-
-    }
-#endif /* PLATFORM_SPI_USE_SPI1 */
-  }
-  /* Configures the peripheral.*/
-
+  (void)spip;
 }
 
 /**
@@ -130,17 +124,7 @@ void spi_lld_start(SPIDriver *spip) {
  * @notapi
  */
 void spi_lld_stop(SPIDriver *spip) {
-
-  if (spip->state == SPI_READY) {
-    /* Resets the peripheral.*/
-
-    /* Disables the peripheral.*/
-#if PLATFORM_SPI_USE_SPI1
-    if (&SPID1 == spip) {
-
-    }
-#endif /* PLATFORM_SPI_USE_SPI1 */
-  }
+  (void)spip;
 }
 
 /**
@@ -151,9 +135,7 @@ void spi_lld_stop(SPIDriver *spip) {
  * @notapi
  */
 void spi_lld_select(SPIDriver *spip) {
-
-  setSlave(spip->config->sspad);
-
+  sim_printf(&HID, "select %d", spip->config->sspad);
 }
 
 /**
@@ -165,10 +147,7 @@ void spi_lld_select(SPIDriver *spip) {
  * @notapi
  */
 void spi_lld_unselect(SPIDriver *spip) {
-
-  (void)spip;
-  setSlave(NO_SLAVE_SET);
-
+  sim_printf(&HID, "unselect %d", spip->config->sspad);
 }
 
 /**
@@ -183,10 +162,8 @@ void spi_lld_unselect(SPIDriver *spip) {
  * @notapi
  */
 void spi_lld_ignore(SPIDriver *spip, size_t n) {
-
+  (void)spip;
   (void)n;
-  spip->state = SPI_READY;
-
 }
 
 /**
@@ -206,11 +183,24 @@ void spi_lld_ignore(SPIDriver *spip, size_t n) {
  */
 void spi_lld_exchange(SPIDriver *spip, size_t n,
                       const void *txbuf, void *rxbuf) {
+  (void)spip;
 
-  receiveData(n, rxbuf);
-  sendData(n, txbuf);
-  spip->state = SPI_READY;
+  /* signal an exchange */
+  sim_printf(&HID, "exchange");
 
+  /* write exchange message */
+  sim_write(&HID, (void*)txbuf, n);
+
+  /* get read lock before spawning thread */
+  chMtxLockS(&read_lock);
+
+  /* pend for completion signal from VHA */
+  chSchWakeupS(chThdCreateI(wsp, sizeof(wsp), NORMALPRIO, complete_thread, (void*)spip), RDY_OK);
+
+  /* read in exchange message */
+  sim_readS(&HID, rxbuf, n);
+
+  chMtxUnlockS();
 }
 
 /**
@@ -227,10 +217,12 @@ void spi_lld_exchange(SPIDriver *spip, size_t n,
  * @notapi
  */
 void spi_lld_send(SPIDriver *spip, size_t n, const void *txbuf) {
+  /* signal a send and write the data */
+  sim_printf(&HID, "send");
+  sim_write(&HID, (void*)txbuf, n);
 
-  sendData(n, txbuf);
-  spip->state = SPI_READY;
-
+  /* pend for completion signal from VHA */
+  chSchWakeupS(chThdCreateI(wsp, sizeof(wsp), NORMALPRIO, complete_thread, (void*)spip), RDY_OK);
 }
 
 /**
@@ -247,10 +239,12 @@ void spi_lld_send(SPIDriver *spip, size_t n, const void *txbuf) {
  * @notapi
  */
 void spi_lld_receive(SPIDriver *spip, size_t n, void *rxbuf) {
+  /* signal a receive and read the data */
+  sim_printf(&HID, "receive");
+  sim_readS(&HID, rxbuf, n);
 
-  receiveData(n, rxbuf);
-  spip->state = SPI_READY;
-
+  /* pend for completion signal from VHA */
+  chSchWakeupS(chThdCreateI(wsp, sizeof(wsp), NORMALPRIO, complete_thread, (void*)spip), RDY_OK);
 }
 
 /**
@@ -266,10 +260,14 @@ void spi_lld_receive(SPIDriver *spip, size_t n, void *rxbuf) {
  * @return              The received data frame from the SPI bus.
  */
 uint16_t spi_lld_polled_exchange(SPIDriver *spip, uint16_t frame) {
-
+  uint16_t inFrame;
   (void)spip;
-  return polledExchange(frame);
 
+  sim_printf(&HID, "polled_exchange");
+  sim_write(&HID, &frame, sizeof frame);
+  sim_read(&HID, &inFrame, sizeof inFrame);
+
+  return inFrame;
 }
 
 #endif /* HAL_USE_SPI */

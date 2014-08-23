@@ -329,10 +329,9 @@ static msg_t read_thread(void *arg) {
  * @param[in] timeout   maximum time to wait before returning
  *
  * @return              the number of bytes read or, if negative an error
- *
- * @api
  */
-extern ssize_t sim_read_timeout(sim_hal_id_t *hid, void *buf, size_t bufsz, int timeout) {
+static ssize_t sim_read_timeout_fetch(sim_hal_id_t *hid, void *buf, size_t bufsz,
+                                      int timeout, msg_t (*fetch)(Mailbox*, msg_t*, systime_t)) {
   static sim_msg_t *msg = NULL;
   msg_t status = RDY_OK;
   ssize_t nb;
@@ -345,7 +344,7 @@ extern ssize_t sim_read_timeout(sim_hal_id_t *hid, void *buf, size_t bufsz, int 
   }
 
   if (!msg) {
-    status = chMBFetch(&read_mb[hid->id], (msg_t*)&msg, timeout);
+    status = fetch(&read_mb[hid->id], (msg_t*)&msg, timeout);
   }
 
   if (status == RDY_OK) {
@@ -357,6 +356,20 @@ extern ssize_t sim_read_timeout(sim_hal_id_t *hid, void *buf, size_t bufsz, int 
   }
 
   return status == RDY_OK ? nb : status;
+}
+
+/**
+ * @brief Standard sim_read_timeout
+ */
+extern ssize_t sim_read_timeout(sim_hal_id_t *hid, void *buf, size_t bufsz, int timeout) {
+  return sim_read_timeout_fetch(hid, buf, bufsz, timeout, chMBFetch);
+}
+
+/**
+ * @brief S-class sim_read_timeout
+ */
+extern ssize_t sim_read_timeoutS(sim_hal_id_t *hid, void *buf, size_t bufsz, int timeout) {
+  return sim_read_timeout_fetch(hid, buf, bufsz, timeout, chMBFetchS);
 }
 
 /**
