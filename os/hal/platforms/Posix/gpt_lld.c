@@ -22,10 +22,6 @@
  * @{
  */
 
-#include <sys/time.h>
-#include <sys/times.h>
-#include <signal.h>
-#include <unistd.h>
 #include "ch.h"
 #include "hal.h"
 
@@ -35,6 +31,7 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
+/*Linux clock ID and signal sigrtmin */
 #define CLOCKID CLOCK_REALTIME
 #define SIG SIGRTMIN
 
@@ -127,6 +124,7 @@ void gpt_lld_start(GPTDriver *gptp) {
   
   if (gptp->state == GPT_STOP) {
     /* Enables the peripheral.*/
+    /* Configures the peripheral.*/
     block(gptp);
     establish_sighandler(gptp);
     gptp->sev.sigev_notify = SIGEV_SIGNAL;
@@ -134,10 +132,6 @@ void gpt_lld_start(GPTDriver *gptp) {
     gptp->sev.sigev_value.sival_ptr = &(gptp->timerid);
     if (timer_create(CLOCKID, &(gptp->sev), &(gptp->timerid)) == -1) 
       errExit("timer_create");
-      
-    printf("timer ID is 0x%lx\n", (long) gptp->timerid);
-  /* Configures the peripheral.*/
-
   }
 }
 /**
@@ -169,14 +163,17 @@ void gpt_lld_start_timer(GPTDriver *gptp, gptcnt_t interval) {
   (void)gptp;
   (void)interval;
   unblock(gptp);
-  gptp->freq_nanosecs = interval;
-  gptp->its.it_value.tv_sec = gptp->freq_nanosecs / 1000000000;
-  gptp->its.it_value.tv_nsec = gptp->freq_nanosecs % 1000000000;
+  gptp->freq_nanosecs = (double)interval;
+  printf("%d\n", interval);
+  gptp->its.it_value.tv_sec = ((double)interval) / CH_FREQUENCY;
+  printf("%d\n", gptp->its.it_value.tv_sec);
+  gptp->its.it_value.tv_nsec = ((double)interval / CH_FREQUENCY)  * 100000000;
+  printf("%d\n", gptp->its.it_value.tv_nsec);
   gptp->its.it_interval.tv_sec = gptp->its.it_value.tv_sec;
   gptp->its.it_interval.tv_nsec = gptp->its.it_value.tv_nsec;
 
   if (timer_settime(gptp->timerid, 0, &(gptp->its), NULL) == -1)
-    errExit("timer_settime");
+    errExit("timer_settime: start_timer");
 }
 
 /**
@@ -197,7 +194,7 @@ void gpt_lld_stop_timer(GPTDriver *gptp) {
   gptp->its.it_interval.tv_nsec = gptp->its.it_value.tv_nsec;
   
   if (timer_settime(gptp->timerid, 0, &(gptp->its), NULL) == -1)
-    errExit("timer_settime");
+    errExit("timer_settime: stop_timer");
 }
 
 /**
@@ -216,8 +213,7 @@ void gpt_lld_polled_delay(GPTDriver *gptp, gptcnt_t interval) {
   (void)gptp;
   (void)interval;
   block(gptp);
-  printf("Going to sleep for: %d \n", interval);
-  usleep(interval);
+  chThdSleepMilliseconds(interval);
   unblock(gptp);
 }
 

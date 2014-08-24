@@ -25,9 +25,19 @@
 #ifndef _GPT_LLD_H_
 #define _GPT_LLD_H_
 
-#include <sys/types.h>
+/*#include <sys/types.h>
 #include <stdlib.h>       
 #include <stdio.h>       
+#include <sys/time.h>
+#include <sys/times.h>
+#include <signal.h>
+#include <unistd.h>
+#include "ch.h"
+#include "hal.h"*/
+
+#include <sys/types.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <signal.h>
 #include <time.h>
 
@@ -122,13 +132,17 @@ struct GPTDriver {
   GPT_DRIVER_EXT_FIELDS
 #endif
   /* End of the mandatory fields.*/
-  //Timer ID for current GPTD 
+  
+/* Timer ID for current GPTD */
   timer_t timerid;
-  //Current signal value 
+
+/* Current signal value */ 
   struct sigevent sev;
-  //Interval timer value 
+
+/* Interval timer value */
   struct itimerspec its;
-  //Other struct variables to help set sigevent and itimerspec
+
+/* Other struct variables to help set sigevent and itimerspec */
   long long freq_nanosecs;
   sigset_t mask;
   struct sigaction sa;
