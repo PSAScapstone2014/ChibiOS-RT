@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+from SocketServer import StreamRequestHandler, TCPServer
+import subprocess
+import threading
+import time
+import sys
+
+LLD_NAME = 'SPI_IO'
+
+def sim_format(lld, data):
+  return '%s\t%s\n' % (lld , data.encode('hex'))
+
+def sim_decode(line):
+  # split the line based on the simio protocol
+  source, code = line.strip().split('\t', 1)
+
+  # decode simio data
+  data = code.decode('hex')
+  return source, data
+
+class SIMIO(StreamRequestHandler):
+  def handle(self):
+    print '[SIMIO] CONNECT'
+    while True:
+      source, data = self.read()
+
+  def read(self):
+    # read data
+    line = self.rfile.readline()
+    source, data = sim_decode(line)
+    sys.stdout.write('[%s] <- %r\n' % (source, data))
+    return source, data
+
+  def write(self, data):
+    sys.stdout.write('[%s] -> %r\n' % ('SPI_IO', data))
+    msg = sim_format('SPI_IO', data)
+    self.wfile.write(msg)
+
+# prevent bind errors on relaunch
+TCPServer.allow_reuse_address = True
+
+# listen for simio connections
+simio = TCPServer(('localhost', 27000), SIMIO)
+simio_thread = threading.Thread(target=simio.handle_request)
+simio_thread.setDaemon(True)
+simio_thread.start()
+
+# spawn the unit test
+# subprocess.check_call(['gdb', './ch'])
+subprocess.check_call(['./ch'])
