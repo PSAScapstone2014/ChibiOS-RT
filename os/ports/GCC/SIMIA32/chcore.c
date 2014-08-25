@@ -31,9 +31,13 @@
  */
 
 #include <stdlib.h>
+#include <sys/time.h>
 
 #include "ch.h"
 #include "hal.h"
+
+static struct timeval nextcnt;
+static struct timeval tick = {0, 1000000 / CH_FREQUENCY};
 
 /**
  * Performs a context switch between two threads.
@@ -88,6 +92,41 @@ void _port_thread_start(msg_t (*pf)(void *), void *p) {
   chSysUnlock();
   chThdExit(pf(p));
   while(1);
+}
+
+/**
+ * @brief Interrupt simulation.
+ */
+void ChkIntSources(void) {
+  struct timeval tv;
+
+#if CH_DEMO
+  if (sd_lld_interrupt_pending()) {
+    dbg_check_lock();
+    if (chSchIsPreemptionRequired())
+      chSchDoReschedule();
+    dbg_check_unlock();
+    return;
+  }
+#endif
+
+  gettimeofday(&tv, NULL);
+  if (timercmp(&tv, &nextcnt, >=)) {
+    timeradd(&nextcnt, &tick, &nextcnt);
+
+    CH_IRQ_PROLOGUE();
+
+    chSysLockFromIsr();
+    chSysTimerHandlerI();
+    chSysUnlockFromIsr();
+
+    CH_IRQ_EPILOGUE();
+
+    dbg_check_lock();
+    if (chSchIsPreemptionRequired())
+      chSchDoReschedule();
+    dbg_check_unlock();
+  }
 }
 
 /** @} */
