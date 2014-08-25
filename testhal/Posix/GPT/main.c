@@ -107,9 +107,10 @@ int main(void) {
     gptStopTimer(&GPTD1);
     //palClearPad(GPIOD, GPIOD_LED4);
     printf("Start Continuous: GPTD2\n");
-    gptStartContinuous(&GPTD2, 2000);
-    printf("Sleep for 2 seconds\n");
-    chThdSleepMilliseconds(2000);
+    gptStartContinuous(&GPTD2, 2500);
+    printf("Sleep for 2.5 seconds\n");
+    //Temporary fix for chThdSleepMilliseconds not handling 500ms. 
+    usleep(2500);
     printf("Stopping GPTD2\n");
     gptStopTimer(&GPTD2);
   }
