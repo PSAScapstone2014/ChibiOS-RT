@@ -58,10 +58,6 @@ static msg_t buffer_thread(void *arg)
     {
 
         int n=0;
-        for(;n < (int)ADCD1.grpp->buffer_size; n++)
-        {
-           printf("sample %d: %d \n",n ,ADCD1.samples[n]);
-        } 
  #if CONVERT     
         float exp = powf(2, ADCD1.grpp->bits);
         float adc_val = ADCD1.grpp->volt_range /exp;
@@ -73,11 +69,18 @@ static msg_t buffer_thread(void *arg)
         {
             sample[n] = exp *  ADCD1.samples[n]/ADCD1.grpp->volt_range; 
             volt_input[n] = sample[n]*adc_val;    
-            printf("adc value: %.2f ", sample[n]);
-            printf("voltage input(digital): %.2f \n", volt_input[n]);
+            sim_printf(ADC_IO, "sample: %hd\n", sample[n]);
+            sim_printf(ADC_IO, "sample: %.2f\n", volt_input[n]);
         }
         ADCD1.adc_val = sample;
         ADCD1.volt_input = volt_input;
+#else
+
+        for(;n < (int)ADCD1.grpp->buffer_size; n++)
+        {
+         //  printf("sample %d: %d \n",n ,ADCD1.samples[n]);
+           sim_printf(ADC_IO, "sample: %hd\n", ADCD1.samples[n]);
+        } 
 #endif 
   chThdSleepMilliseconds(1000);       
     } 
@@ -165,12 +168,7 @@ void adc_lld_start_conversion(ADCDriver *adcp) {
   else 
   {
 
-      //prints out the digital outputs
         int n=0;
-        for(;n < (int)grrp->buffer_size; n++)
-        {
-           printf("sample %d: %d \n",n ,adcp->samples[n]);
-        } 
  #if CONVERT
         //prints out the calculated digital outputs if there's no digit outputs within
         //the buffer.      
@@ -183,11 +181,18 @@ void adc_lld_start_conversion(ADCDriver *adcp) {
         {
             sample[n] = exp * adcp->samples[n]/grrp->volt_range; 
             volt_input[n] = sample[n]* adc_val;    
-            printf("adc value: %.2f ", sample[n]);
-            printf("voltage input(digital): %.2f \n", volt_input[n]);
+            sim_printf(ADC_IO, "sample: %.2f\n", sample[n]);
+            sim_printf(ADC_IO, "sample: %.2f\n", volt_input[n]);
         }
         adcp->adc_val = sample;
         adcp->volt_input = volt_input;
+#else
+
+      //prints out the digital outputs
+        for(;n < (int)grrp->buffer_size; n++)
+        {
+            sim_printf(ADC_IO, "sample: %hd\n", adcp->samples[n]);
+        } 
 #endif        
   } 
 }

@@ -57,6 +57,7 @@ typedef enum {
   SDC_IO,
   I2C_IO,
   PWM_IO,
+  ADC_IO,
   HID_COUNT /* HID_COUNT must be last */
 } sim_hal_id_t;
 
