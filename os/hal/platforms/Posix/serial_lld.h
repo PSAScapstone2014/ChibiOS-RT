@@ -104,7 +104,8 @@ typedef struct {
   SOCKET                    com_data;                                       \
   /* Port readable name.*/                                                  \
   const char                *com_name;
-#else
+
+#else /* !CH_DEMO */
 
 #define _serial_driver_network_data                                         \
   /* hal layer id */                                                        \
