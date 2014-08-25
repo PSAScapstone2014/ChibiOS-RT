@@ -58,25 +58,20 @@ typedef enum {
   I2C_IO,
   PWM_IO,
   HID_COUNT /* HID_COUNT must be last */
-} hid_t;
-
-typedef struct {
-  hid_t     id;
-  uint32_t  sid;
 } sim_hal_id_t;
 
 /* configure based on command line arguments */
 extern void sim_getopt(int argc, char **argv);
 
 /* read data sent to the HAL */
-extern ssize_t sim_read_timeout(sim_hal_id_t *hid, void *buf, size_t bufsz, int timeout);
-extern ssize_t sim_read_timeoutS(sim_hal_id_t *hid, void *buf, size_t bufsz, int timeout);
+extern ssize_t sim_read_timeout(sim_hal_id_t hid, void *buf, size_t bufsz, int timeout);
+extern ssize_t sim_read_timeoutS(sim_hal_id_t hid, void *buf, size_t bufsz, int timeout);
 #define sim_read(a,b,c) sim_read_timeout((a),(b),(c),TIME_INFINITE)
 #define sim_readS(a,b,c) sim_read_timeoutS((a),(b),(c),TIME_INFINITE)
 
 /* write data from the HAL */
-extern ssize_t sim_write(sim_hal_id_t *hid, void *buf, size_t bufsz);
-extern int sim_printf(sim_hal_id_t *hid, char *fmt, ...);
+extern ssize_t sim_write(sim_hal_id_t hid, void *buf, size_t bufsz);
+extern int sim_printf(sim_hal_id_t hid, char *fmt, ...);
 
 /* shutdown */
 extern int sim_disconnect(void);

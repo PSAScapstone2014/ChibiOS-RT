@@ -35,8 +35,6 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
-static sim_hal_id_t HID = { SPI_IO, 0 };
-
 /*===========================================================================*/
 /* Driver exported variables.                                                */
 /*===========================================================================*/
@@ -76,7 +74,7 @@ static msg_t complete_thread(void *arg) {
   /* only one reader at a time */
   chMtxLock(&read_lock);
 
-  int nb = sim_read(&HID, &c, sizeof c);
+  int nb = sim_read(SPI_IO, &c, sizeof c);
   if (nb > 0) {
     CH_IRQ_PROLOGUE();
     _spi_isr_code(spip);
@@ -135,7 +133,7 @@ void spi_lld_stop(SPIDriver *spip) {
  * @notapi
  */
 void spi_lld_select(SPIDriver *spip) {
-  sim_printf(&HID, "select %d", spip->config->sspad);
+  sim_printf(SPI_IO, "select %d", spip->config->sspad);
 }
 
 /**
@@ -147,7 +145,7 @@ void spi_lld_select(SPIDriver *spip) {
  * @notapi
  */
 void spi_lld_unselect(SPIDriver *spip) {
-  sim_printf(&HID, "unselect %d", spip->config->sspad);
+  sim_printf(SPI_IO, "unselect %d", spip->config->sspad);
 }
 
 /**
@@ -162,7 +160,7 @@ void spi_lld_unselect(SPIDriver *spip) {
  * @notapi
  */
 void spi_lld_ignore(SPIDriver *spip, size_t n) {
-  sim_printf(&HID, "ignore %d", n);
+  sim_printf(SPI_IO, "ignore %d", n);
 
   /* ready for the next message */
   _spi_isr_code(spip);
@@ -188,13 +186,13 @@ void spi_lld_exchange(SPIDriver *spip, size_t n,
   (void)spip;
 
   /* signal an exchange */
-  sim_printf(&HID, "exchange");
+  sim_printf(SPI_IO, "exchange");
 
   /* write exchange message */
-  sim_write(&HID, (void*)txbuf, n);
+  sim_write(SPI_IO, (void*)txbuf, n);
 
   /* read in exchange message */
-  sim_readS(&HID, rxbuf, n);
+  sim_readS(SPI_IO, rxbuf, n);
 
   /* ready for the next message */
   _spi_isr_code(spip);
@@ -215,8 +213,8 @@ void spi_lld_exchange(SPIDriver *spip, size_t n,
  */
 void spi_lld_send(SPIDriver *spip, size_t n, const void *txbuf) {
   /* signal a send and write the data */
-  sim_printf(&HID, "send");
-  sim_write(&HID, (void*)txbuf, n);
+  sim_printf(SPI_IO, "send");
+  sim_write(SPI_IO, (void*)txbuf, n);
 
   /* ready for the next message */
   _spi_isr_code(spip);
@@ -237,8 +235,8 @@ void spi_lld_send(SPIDriver *spip, size_t n, const void *txbuf) {
  */
 void spi_lld_receive(SPIDriver *spip, size_t n, void *rxbuf) {
   /* signal a receive and read the data */
-  sim_printf(&HID, "receive");
-  sim_readS(&HID, rxbuf, n);
+  sim_printf(SPI_IO, "receive");
+  sim_readS(SPI_IO, rxbuf, n);
 
   /* ready for the next message */
   _spi_isr_code(spip);
@@ -260,9 +258,9 @@ uint16_t spi_lld_polled_exchange(SPIDriver *spip, uint16_t frame) {
   uint16_t inFrame;
   (void)spip;
 
-  sim_printf(&HID, "polled_exchange");
-  sim_write(&HID, &frame, sizeof frame);
-  sim_read(&HID, &inFrame, sizeof inFrame);
+  sim_printf(SPI_IO, "polled_exchange");
+  sim_write(SPI_IO, &frame, sizeof frame);
+  sim_read(SPI_IO, &inFrame, sizeof inFrame);
 
   return inFrame;
 }

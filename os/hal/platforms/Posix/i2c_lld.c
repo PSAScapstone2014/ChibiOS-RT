@@ -34,7 +34,7 @@
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
-static sim_hal_id_t HID = {I2C_IO, 0};
+
 /*===========================================================================*/
 /* Driver exported variables.                                                */
 /*===========================================================================*/
@@ -87,7 +87,7 @@ void i2c_lld_start(I2CDriver *i2cp) {
     /* Enables the peripheral.*/
 #if PLATFORM_I2C_USE_I2C1
      if (&I2CD1 == i2cp) {
-       
+
     }
 #endif /* PLATFORM_I2C_USE_I2C1 */
   }
@@ -147,12 +147,12 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
    i2cp->addr = addr << 1;
    i2cp->errors = 0;
 
-   sim_read_timeout(&HID, (void*)rxbuf, rxbytes,timeout);
+   sim_read_timeout(I2C_IO, (void*)rxbuf, rxbytes,timeout);
    printf("in Recieve\n");
 
 
   return RDY_TIMEOUT;
-  
+
 }
 
 /**
@@ -189,10 +189,10 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
 
    i2cp->addr = addr << 1;
    i2cp->errors = 0;
-   sim_read_timeout(&HID, (void*)rxbuf, rxbytes, timeout);
+   sim_read_timeout(I2C_IO, (void*)rxbuf, rxbytes, timeout);
    printf("in Recieve2\n");
-   
-   sim_write(&HID, (void*)txbuf, txbytes);
+
+   sim_write(I2C_IO, (void*)txbuf, txbytes);
 
   return RDY_TIMEOUT;
 

@@ -32,8 +32,6 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
-static sim_hal_id_t HID = { EXT_IO, 0 };
-
 /*===========================================================================*/
 /* Driver exported variables.                                                */
 /*===========================================================================*/
@@ -63,7 +61,7 @@ static msg_t read_thread(void *arg) {
   EXTDriver *extp = (EXTDriver*)arg;
   uint8_t channel;
   while (TRUE) {
-    int nb = sim_read(&HID, &channel, sizeof channel);
+    int nb = sim_read(EXT_IO, &channel, sizeof channel);
     if (nb < 0) {
       /* don't spam errors too quickly */
       chThdSleep(S2ST(1));

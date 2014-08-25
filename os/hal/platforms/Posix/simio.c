@@ -70,7 +70,7 @@ static struct sim_host_t {
 /**
  * @brief   Forward function declarations
  */
-static char* hid2str(sim_hal_id_t*);
+static char* hid2str(sim_hal_id_t);
 static SOCKET _sim_socket(void);
 static int _sim_connect(void);
 static msg_t read_thread(void *arg);
@@ -127,8 +127,8 @@ extern void sim_getopt(int argc, char **argv) {
  *
  * @notapi
  */
-static char* hid2str(sim_hal_id_t *hid) {
-  switch (hid->id) {
+static char* hid2str(sim_hal_id_t hid) {
+  switch (hid) {
     case SIM_IO: return "SIM_IO";
     case PAL_IO: return "PAL_IO";
     case SD1_IO: return "SD1_IO";
@@ -147,7 +147,7 @@ static char* hid2str(sim_hal_id_t *hid) {
  *
  * @notapi
  */
-static hid_t str2hid(char *hid) {
+static sim_hal_id_t str2hid(char *hid) {
   if (!strcmp(hid, "PAL_IO")) return PAL_IO;
   else if (!strcmp(hid, "SD1_IO")) return SD1_IO;
   else if (!strcmp(hid, "SD2_IO")) return SD2_IO;
@@ -174,7 +174,7 @@ static hid_t str2hid(char *hid) {
  *
  * @notapi
  */
-static sim_buf_t* _sim_encode(sim_hal_id_t *hid, void *buf, size_t bufsz) {
+static sim_buf_t* _sim_encode(sim_hal_id_t hid, void *buf, size_t bufsz) {
   sim_buf_t *code = sim_buf_alloc(sizeof(DUMMY_HEADER "\t") + bufsz*2);
   char hex[3];
   size_t i;
@@ -222,7 +222,7 @@ static void _sim_decode(sim_buf_t *buf) {
  * @notapi
  */
 static void _sim_enqueue(sim_msg_t *msg) {
-  hid_t hid = str2hid(msg->header);
+  sim_hal_id_t hid = str2hid(msg->header);
   msg_t status;
 
   while (TRUE) {
@@ -332,7 +332,7 @@ static msg_t read_thread(void *arg) {
  *
  * @return              the number of bytes read or, if negative an error
  */
-static ssize_t sim_read_timeout_fetch(sim_hal_id_t *hid, void *buf, size_t bufsz,
+static ssize_t sim_read_timeout_fetch(sim_hal_id_t hid, void *buf, size_t bufsz,
                                       int timeout, msg_t (*fetch)(Mailbox*, msg_t*, systime_t)) {
   static sim_msg_t *msg = NULL;
   msg_t status = RDY_OK;
@@ -346,7 +346,7 @@ static ssize_t sim_read_timeout_fetch(sim_hal_id_t *hid, void *buf, size_t bufsz
   }
 
   if (!msg) {
-    status = fetch(&read_mb[hid->id], (msg_t*)&msg, timeout);
+    status = fetch(&read_mb[hid], (msg_t*)&msg, timeout);
   }
 
   if (status == RDY_OK) {
@@ -363,14 +363,14 @@ static ssize_t sim_read_timeout_fetch(sim_hal_id_t *hid, void *buf, size_t bufsz
 /**
  * @brief Standard sim_read_timeout
  */
-extern ssize_t sim_read_timeout(sim_hal_id_t *hid, void *buf, size_t bufsz, int timeout) {
+extern ssize_t sim_read_timeout(sim_hal_id_t hid, void *buf, size_t bufsz, int timeout) {
   return sim_read_timeout_fetch(hid, buf, bufsz, timeout, chMBFetch);
 }
 
 /**
  * @brief S-class sim_read_timeout
  */
-extern ssize_t sim_read_timeoutS(sim_hal_id_t *hid, void *buf, size_t bufsz, int timeout) {
+extern ssize_t sim_read_timeoutS(sim_hal_id_t hid, void *buf, size_t bufsz, int timeout) {
   return sim_read_timeout_fetch(hid, buf, bufsz, timeout, chMBFetchS);
 }
 
@@ -385,7 +385,7 @@ extern ssize_t sim_read_timeoutS(sim_hal_id_t *hid, void *buf, size_t bufsz, int
  *                      error occurred
  * @api
  */
-extern int sim_write(sim_hal_id_t *hid, void *buf, size_t bufsz) {
+extern int sim_write(sim_hal_id_t hid, void *buf, size_t bufsz) {
   sim_buf_t *code;
   int nb = 0;
 
@@ -433,7 +433,7 @@ extern int sim_write(sim_hal_id_t *hid, void *buf, size_t bufsz) {
  *                      error occurred
  * @api
  */
-extern int sim_printf(sim_hal_id_t *hid, char *fmt, ...) {
+extern int sim_printf(sim_hal_id_t hid, char *fmt, ...) {
   char buf[SIM_PRINTF_MAX], *bufp = buf;
   va_list ap;
   int nb;

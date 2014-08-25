@@ -48,8 +48,6 @@ PWMDriver PWMD1;
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
 
-sim_hal_id_t HID = { PWM_IO, 0 };
-
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
@@ -116,7 +114,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
  */
 void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
   (void)pwmp;
-  sim_printf(&HID, "period %hd", period);
+  sim_printf(PWM_IO, "period %hd", period);
 }
 
 /**
@@ -137,7 +135,7 @@ void pwm_lld_enable_channel(PWMDriver *pwmp,
                             pwmchannel_t channel,
                             pwmcnt_t width) {
   (void)pwmp;
-  sim_printf(&HID, "enable channel %hhd width %hd", channel, width);
+  sim_printf(PWM_IO, "enable channel %hhd width %hd", channel, width);
 }
 
 /**
@@ -156,7 +154,7 @@ void pwm_lld_enable_channel(PWMDriver *pwmp,
  */
 void pwm_lld_disable_channel(PWMDriver *pwmp, pwmchannel_t channel) {
   (void)pwmp;
-  sim_printf(&HID, "disable channel %hhd", channel);
+  sim_printf(PWM_IO, "disable channel %hhd", channel);
 }
 
 #endif /* HAL_USE_PWM */
