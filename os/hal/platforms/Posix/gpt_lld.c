@@ -164,14 +164,14 @@ void gpt_lld_start_timer(GPTDriver *gptp, gptcnt_t interval) {
   (void)interval;
   unblock(gptp);
   gptp->freq_nanosecs = (double)interval;
-  printf("%d\n", interval);
+  printf("freq_nanosecs: %d\n", interval);
   gptp->its.it_value.tv_sec = ((double)interval) / CH_FREQUENCY;
-  printf("%d\n", gptp->its.it_value.tv_sec);
+  printf("tv_sec: %d\n", gptp->its.it_value.tv_sec);
   gptp->its.it_value.tv_nsec = ((double)interval / CH_FREQUENCY)  * 100000000;
-  printf("%d\n", gptp->its.it_value.tv_nsec);
+  printf("tv_nsec: %d\n", gptp->its.it_value.tv_nsec);
   gptp->its.it_interval.tv_sec = gptp->its.it_value.tv_sec;
   gptp->its.it_interval.tv_nsec = gptp->its.it_value.tv_nsec;
-
+  
   if (timer_settime(gptp->timerid, 0, &(gptp->its), NULL) == -1)
     errExit("timer_settime: start_timer");
 }
