@@ -39,7 +39,8 @@ class SIMIO(StreamRequestHandler):
       elif cmd == 'write':
         # read and decode another io message that contains the data
         line = self.rfile.readline()
-        data = self.decodeline(line)
+        _, code = line.strip().split('\t', 1)
+        data = code.decode('hex')
 
         # store the data
         memfile.write(startblk, data)

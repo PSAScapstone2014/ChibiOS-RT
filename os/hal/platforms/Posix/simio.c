@@ -138,6 +138,7 @@ static char* hid2str(sim_hal_id_t hid) {
     case SDC_IO: return "SDC_IO";
     case I2C_IO: return "I2C_IO";
     case PWM_IO: return "PWM_IO";
+    case ADC_IO: return "ADC_IO";
     default:     return "UNK_IO";
   }
 }
@@ -156,6 +157,7 @@ static sim_hal_id_t str2hid(char *hid) {
   else if (!strcmp(hid, "SDC_IO")) return SDC_IO;
   else if (!strcmp(hid, "I2C_IO")) return I2C_IO;
   else if (!strcmp(hid, "PWM_IO")) return PWM_IO;
+  else if (!strcmp(hid, "ADC_IO")) return ADC_IO;
   eprintf("no such queue %s", hid);
   return SIM_IO;
 }

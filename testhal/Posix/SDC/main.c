@@ -124,8 +124,6 @@ void fillbuffers(uint8_t pattern){
  *
  */
 void sdiotest(void){
-  uint32_t i = 0;
-
   printf("Trying to connect SDIO... ");
   chThdSleepMilliseconds(100);
 
@@ -162,12 +160,10 @@ void sdiotest(void){
     /* fill reference buffer from SD card */
     if (sdcRead(&SDCD1, 0, inbuf, SDC_BURST_SIZE))
       chSysHalt();
-    for (i=0; i<1000; i++){
-      if (sdcRead(&SDCD1, 0, outbuf, SDC_BURST_SIZE))
-        chSysHalt();
-      if (memcmp(inbuf, outbuf, SDC_BURST_SIZE * MMCSD_BLOCK_SIZE) != 0)
-        chSysHalt();
-    }
+    if (sdcRead(&SDCD1, 0, outbuf, SDC_BURST_SIZE))
+      chSysHalt();
+    if (memcmp(inbuf, outbuf, SDC_BURST_SIZE * MMCSD_BLOCK_SIZE) != 0)
+      chSysHalt();
     printf(" OK\r\n");
     chThdSleepMilliseconds(100);
 
@@ -178,12 +174,10 @@ void sdiotest(void){
     /* fill reference buffer from SD card */
     if (sdcRead(&SDCD1, 0, inbuf + 1, SDC_BURST_SIZE))
       chSysHalt();
-    for (i=0; i<1000; i++){
-      if (sdcRead(&SDCD1, 0, outbuf + 1, SDC_BURST_SIZE))
-        chSysHalt();
-      if (memcmp(inbuf, outbuf, SDC_BURST_SIZE * MMCSD_BLOCK_SIZE) != 0)
-        chSysHalt();
-    }
+    if (sdcRead(&SDCD1, 0, outbuf + 1, SDC_BURST_SIZE))
+      chSysHalt();
+    if (memcmp(inbuf, outbuf, SDC_BURST_SIZE * MMCSD_BLOCK_SIZE) != 0)
+      chSysHalt();
     printf(" OK\r\n");
     chThdSleepMilliseconds(100);
 
