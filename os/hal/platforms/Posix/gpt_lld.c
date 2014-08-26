@@ -16,7 +16,7 @@
 
 /**
  * @file    Posix/gpt_lld.c
- * @brief   GPT Driver subsystem low level driver source template.
+ * @brief   GPT Driver subsystem low level driver source.
  *
  * @addtogroup GPT
  * @{
@@ -31,7 +31,7 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
-/*Linux clock ID and signal sigrtmin */
+/*Linux real time clock ID and signal*/
 #define CLOCKID CLOCK_REALTIME
 #define SIG SIGRTMIN
 
@@ -61,18 +61,34 @@
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 
+/*
+* Error handling macro.
+*/ 
 #define errExit(msg)    do { perror(msg); exit(EXIT_FAILURE); \
                                } while (0)
+/* 
+* This handler function deals with real time event signals that occur. 
+*/
+static void handler(int sig, siginfo_t *si, void *uc) {
+  printf("Caught signal %d\n", sig);
+  signal(sig, SIG_IGN);
+}
 
+/*
+* This function establishes the declared handler for the signals. 
+*/
 void establish_sighandler(GPTDriver *gptp) {
   printf("Establishing handler for signal %d\n", SIG);
   gptp->sa.sa_flags = SA_SIGINFO;
-  gptp->sa.sa_sigaction = 0;
+  gptp->sa.sa_sigaction = handler;
   sigemptyset(&(gptp->sa.sa_mask));
   if (sigaction(SIG, &(gptp->sa), NULL) == -1)
     errExit("sigaction");
 }
 
+/*
+* This function is used to block signals for safe handling.
+*/
 void block(GPTDriver *gptp) {
   printf("Blocking signal %d\n", SIG);
   sigemptyset(&(gptp->mask));
@@ -81,6 +97,9 @@ void block(GPTDriver *gptp) {
     errExit("sigprocmask");
 }
 
+/*
+* This function is used to unblock signals for safe handling. 
+*/ 
 void unblock(GPTDriver *gptp) {
   printf("Unblocking signal %d\n", SIG);
   if (sigprocmask(SIG_UNBLOCK, &(gptp->mask), NULL) == -1)
@@ -160,14 +179,16 @@ void gpt_lld_stop(GPTDriver *gptp) {
  */
 void gpt_lld_start_timer(GPTDriver *gptp, gptcnt_t interval) {
 
-  (void)gptp;
-  (void)interval;
   unblock(gptp);
+  establish_sighandler(gptp);
+  gptp->sev.sigev_notify = SIGEV_SIGNAL;
+  gptp->sev.sigev_signo = SIG;
+  gptp->sev.sigev_value.sival_ptr = &(gptp->timerid);
   gptp->freq_nanosecs = (double)interval;
   printf("freq_nanosecs: %d\n", interval);
-  gptp->its.it_value.tv_sec = ((double)interval) / CH_FREQUENCY;
+  gptp->its.it_value.tv_sec = ((double)interval) / (double)CH_FREQUENCY;
   printf("tv_sec: %d\n", gptp->its.it_value.tv_sec);
-  gptp->its.it_value.tv_nsec = ((double)interval / CH_FREQUENCY)  * 100000000;
+  gptp->its.it_value.tv_nsec = ((double)interval / CH_FREQUENCY) * 100000000;
   printf("tv_nsec: %d\n", gptp->its.it_value.tv_nsec);
   gptp->its.it_interval.tv_sec = gptp->its.it_value.tv_sec;
   gptp->its.it_interval.tv_nsec = gptp->its.it_value.tv_nsec;

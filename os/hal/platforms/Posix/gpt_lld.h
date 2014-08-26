@@ -47,6 +47,7 @@
 /* Driver constants.                                                         */
 /*===========================================================================*/
 
+/* Linux real time clock ID and signal */
 #define CLOCKID CLOCK_REALTIME
 #define SIG SIGRTMIN
 
